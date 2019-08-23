@@ -9,19 +9,41 @@
 // * Flash Frequency 80MHz (default)
 // * Partition Scheme: Default
 
-// === Just a placeholder TFT demo file follows ===
-
-//   Diagnostic test for the displayed colour order
-//
-// Writen by Bodmer 17/2/19 for the TFT_eSPI library:
-// https://github.com/Bodmer/TFT_eSPI
-#include <SPI.h>
+#include <TaskScheduler.h>
+#include <WiFi.h>
+#include <SPI.h>  // For TFT
 #include "TFT_eSPI/TFT_eSPI.h"       // Hardware-specific library
+
 TFT_eSPI tft = TFT_eSPI();  // Invoke custom library
 
+
+
 void setup(void) {
+  Serial.begin(115200);
+  Serial.println("Bsides Badge 2019 starting");
+
+  // Delay to notice restarts and bootloops
+  delay(1000);
+
   tft.init();
 
+  demoScreen();
+
+  setupWifi();
+
+  delay(5000);
+
+  uint64_t chipid=ESP.getEfuseMac();//The chip ID is essentially its MAC address(length: 6 bytes).
+  Serial.printf("ESP32 Chip ID = %04X",(uint16_t)(chipid>>32));//print High 2 bytes
+  Serial.printf("%08X\n",(uint32_t)chipid);//print Low 4bytes.
+  
+}
+
+void loop() {
+  checkWifi();
+}
+
+void demoScreen() {
   tft.fillScreen(TFT_BLACK);
   
   // Set "cursor" at top left corner of display (0,0) and select font 4
@@ -43,8 +65,14 @@ void setup(void) {
   tft.setTextColor(TFT_BLUE, TFT_BLACK);
   tft.println("Blue text");
 
-  delay(5000);
-
 }
 
-void loop() {}
+// Task cycle LEDs
+
+// Task display current/next speaker
+
+// Maintain wifi
+
+// Download bsides details
+
+// Service infrared
