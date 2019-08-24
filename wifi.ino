@@ -42,7 +42,7 @@
 
 void WiFiEvent(WiFiEvent_t event)
 {
-  Serial.printf("[WiFi-event] event: %d\n", event);
+  Serial.printf("{WiFi) Event: %d -- ", event);
 
   switch (event) {
     case SYSTEM_EVENT_WIFI_READY:
@@ -126,9 +126,11 @@ void WiFiEvent(WiFiEvent_t event)
 
 void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
 {
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
+  Serial.print("{WiFi} Connected! IP address: ");
   Serial.println(IPAddress(info.got_ip.ip_info.ip.addr));
+
+  // Kick NTP
+  tTimeSync.forceNextIteration();
 }
 
 void setupWifi()
@@ -162,7 +164,7 @@ void setupWifi()
 // Reconnect scheme - justoke 
 long lastReconnectAttempt = 0;
 
-void checkWifi()
+void runWifiCheck()
 {
   if (!WiFi.isConnected()) {
     long now = millis();

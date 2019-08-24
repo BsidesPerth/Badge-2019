@@ -1,38 +1,98 @@
-// Bsides Badge 2019
 //
+//
+//
+//      ,---,.                                                                    ,----,     ,----..        ,---,  '   ,'  '.  
+//    ,'  .'  \             ,--,         ,---,                                  .'   .' \   /   /   \    ,`--.' | /   /      \ 
+//  ,---.' .' |           ,--.'|       ,---.'|                                ,----,'    | /   .     :  /    /  :.   ;  ,/.  : 
+//  |   |  |: | .--.--.   |  |,        |   | :            .--.--.             |    :  .  ;.   /   ;.  \:    |.' ''   |  | :  ; 
+//  :   :  :  //  /    '  `--'_        |   | |   ,---.   /  /    '            ;    |.'  /.   ;   /  ` ;`----':  |'   |  ./   : 
+//  :   |    ;|  :  /`./  ,' ,'|     ,--.__| |  /     \ |  :  /`./            `----'/  ; ;   |  ; \ ; |   '   ' ;|   :       , 
+//  |   :     \  :  ;_    '  | |    /   ,'   | /    /  ||  :  ;_                /  ;  /  |   :  | ; | '   |   | | \   \      | 
+//  |   |   . |\  \    `. |  | :   .   '  /  |.    ' / | \  \    `.            ;  /  /-, .   |  ' ' ' :   '   : ;  `---`---  ; 
+//  '   :  '; | `----.   \'  : |__ '   ; |:  |'   ;   /|  `----.   \          /  /  /.`| '   ;  \; /  |   |   | '     |   |  | 
+//  |   |  | ; /  /`--'  /|  | '.'||   | '/  ''   |  / | /  /`--'  /        ./__;      :  \   \  ',  /    '   : |     '   :  ; 
+//  |   :   / '--'.     / ;  :    ;|   :    :||   :    |'--'.     /         |   :    .'    ;   :    /     ;   |.'     |   |  ' 
+//  |   | ,'    `--'---'  |  ,   /  \   \  /   \   \  /   `--'---'          ;   | .'        \   \ .'      '---'       ;   |.'  
+//  `----'                 ---`-'    `----'     `----'                      `---'            `---`                    '---'    
+//                                                                                                                             
+//
+//                                                                 
+//                                                                                                                             
+// Bsides Badge 2019
+//  ( ascii art: http://patorjk.com/software/taag )
+//                                                                                                                  ,---.-,    
 // __ Arduino IDE setup __
 // Add this in Preferences -> Additional Boards URLs:
 //  https://dl.espressif.com/dl/package_esp32_index.json
-// Boards setting:
-// * WEMOS LOLIN32
+//
+// Boards settings:
+// * Board: WEMOS LOLIN32
 // * Upload Speed: 921600 (default)
-// * Flash Frequency 80MHz (default)
+// * Flash Frequency: 80MHz (default)
 // * Partition Scheme: Default
+//
+// Alternate board settings:
+// * Board: ESP32 Dev Module
+// * Upload Speed: 921600 (default)
+// * CPU Frequency: 80MHz
+// * Flash Frequency: 80MHz (default)
+// * Flash Mode: QIO (default)
+// * Flash Size: 4MB (32Mb) (default)
+// * Partition Scheme: Default 4MB with spiffs (default)
+// * Core debug level: None -> Verbose (extra logging over serial)
+// * PSRAM: Disabled (default)
 
-#include <TaskScheduler.h>
-#include <WiFi.h>
-#include <SPI.h>  // For TFT
-#include "TFT_eSPI/TFT_eSPI.h"       // Hardware-specific library
+#include <WiFi.h>  // ESP32 inbuilt library
+#include <SPI.h>  // For TFT, ESP32 inbuilt library
+#include <WiFiUdp.h> // For NTPClient, inbuilt libray
 
-TFT_eSPI tft = TFT_eSPI();  // Invoke custom library
+#include <TaskScheduler.h>  // https://github.com/arkhipenko/TaskScheduler
+#include <NTPClient.h>  // https://github.com/arduino-libraries/NTPClient
 
+#include "TFT_eSPI/TFT_eSPI.h"   // Local copy of TFT_eSPI: https://github.com/Bodmer/TFT_eSPI
 
+// TFT Screen
+TFT_eSPI tft = TFT_eSPI();  // Create screen object
+
+// Task Scheduler
+Scheduler runner;
+// - prototypes for tasks
+void runWifiCheck();
+void runTimeSync();
+void runDisplayTime();
+// - tasks themselves 
+// - Task tTask(update time ms, update count, address of function);
+Task tWifiCheck(  5 * 1000, TASK_FOREVER, &runWifiCheck);
+Task tTimeSync( 60 * 1000, TASK_FOREVER, &runTimeSync);
+Task tDisplayTime( 1 * 1000, TASK_FOREVER, &runDisplayTime);
 
 void setup(void) {
   Serial.begin(115200);
   Serial.println("Bsides Badge 2019 starting");
 
-  // Delay to notice restarts and bootloops
+  // Delay to help notice restarts and bootloops
   delay(1000);
 
   tft.init();
 
   demoScreen();
 
+  // Start wifi
   setupWifi();
 
-  delay(5000);
+  // Start scheduler
+  runner.init();
+  // - add tasks
+  runner.addTask(tWifiCheck);
+  runner.addTask(tTimeSync);
+  runner.addTask(tDisplayTime);
+  // - start tasks
+  tWifiCheck.enable();
+  tTimeSync.enable();
+  tDisplayTime.enable();
+  Serial.println("Initialised scheduler");
 
+  // Print badges unique ID (mac address)
   uint64_t chipid=ESP.getEfuseMac();//The chip ID is essentially its MAC address(length: 6 bytes).
   Serial.printf("ESP32 Chip ID = %04X",(uint16_t)(chipid>>32));//print High 2 bytes
   Serial.printf("%08X\n",(uint32_t)chipid);//print Low 4bytes.
@@ -40,7 +100,7 @@ void setup(void) {
 }
 
 void loop() {
-  checkWifi();
+  runner.execute();
 }
 
 void demoScreen() {
