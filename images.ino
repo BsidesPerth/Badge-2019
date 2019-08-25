@@ -3,10 +3,6 @@ void drawJpeg(const char *filename, int xpos, int ypos);
 
 void imagesSetup() {
   tft.fillScreen(TFT_BLACK);
-  if (!SPIFFS.begin()) {
-    Serial.println("SPIFFS initialisation failed!");
-    while (1) yield(); // Stay here twiddling thumbs waiting
-  }
   listFiles(); // Lists the files so you can see what is in the SPIFFS
 }
 

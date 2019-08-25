@@ -133,8 +133,7 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
   tTimeSync.forceNextIteration();
 
   // Get speaker updates from server
-  tsendGET.enable();
-  tsendGET.forceNextIteration();
+  tGetSpeakersList.enable();
 }
 
 void setupWifi()
