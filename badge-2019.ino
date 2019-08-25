@@ -34,7 +34,7 @@
 // Alternate board settings:
 // * Board: ESP32 Dev Module
 // * Upload Speed: 921600 (default)
-// * CPU Frequency: 80MHz
+// * CPU Frequency: 240MHz (default)
 // * Flash Frequency: 80MHz (default)
 // * Flash Mode: QIO (default)
 // * Flash Size: 4MB (32Mb) (default)
@@ -48,7 +48,11 @@
 
 #include <TaskScheduler.h>  // https://github.com/arkhipenko/TaskScheduler
 #include <NTPClient.h>  // https://github.com/arduino-libraries/NTPClient
-#include <FastLED.h>
+#include <FastLED.h>  // https://github.com/FastLED/FastLED
+
+#define FS_NO_GLOBALS
+#include <FS.h>  // for JPEG library?
+#include <JPEGDecoder.h>  // https://github.com/Bodmer/JPEGDecoder
 
 #include "TFT_eSPI/TFT_eSPI.h"   // Local copy of TFT_eSPI: https://github.com/Bodmer/TFT_eSPI
 
@@ -61,28 +65,25 @@ Scheduler runner;
 void runWifiCheck();
 void runTimeSync();
 void runDisplayTime();
-void idleLoop();
-void rainbowloop();
+void idleDisplay();
 // - tasks themselves 
 //     Task tTask(update time ms, update count, address of function);
 Task tWifiCheck(  5 * 1000, TASK_FOREVER, &runWifiCheck);
 Task tTimeSync( 60 * 1000, TASK_FOREVER, &runTimeSync);
 Task tDisplayTime( 1 * 1000, TASK_FOREVER, &runDisplayTime);
-Task tidleLoop( 50, TASK_FOREVER, &idleLoop);
-Task trainbowloop( 10, TASK_FOREVER, &rainbowloop);
+Task tIdleDisplay( 10, TASK_FOREVER, &idleDisplay);
 
 void setup(void) {
   Serial.begin(115200);
   Serial.println("Bsides Badge 2019 starting");
 
   // Delay to help notice restarts and bootloops
-  delay(1000);
+  //delay(1000);
 
   tft.init();
 
   //demoScreen();
-  //idleSetup();
-  rainbowsetup();
+  idleSetup();
 
   // Start wifi
   setupWifi();
@@ -93,14 +94,12 @@ void setup(void) {
   runner.addTask(tWifiCheck);
   runner.addTask(tTimeSync);
   runner.addTask(tDisplayTime);
-  runner.addTask(tidleLoop);
-  runner.addTask(trainbowloop);
+  runner.addTask(tIdleDisplay);
   // - start tasks
   tWifiCheck.enable();
   tTimeSync.enable();
   //tDisplayTime.enable();
-  //tidleLoop.enable();
-  trainbowloop.enable();
+  tIdleDisplay.enable();
   Serial.println("Initialised scheduler");
 
   // Print badges unique ID (mac address)
