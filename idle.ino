@@ -18,17 +18,22 @@
 TFT_eSprite img = TFT_eSprite(&tft);
 
 void idleSetup(void) {
-  tft.fillScreen(TFT_BLACK);
-
   img.createSprite(230, 230);
   img.fillSprite(TFT_BLACK);
 }
 
+bool idleOnEnable() {
+  tft.fillScreen(TFT_BLACK);
+  return true;
+}
+
 void idleDisplay() {
   // Background rainbow
+  const byte rainbowSaturation = 255; // 200
+  const byte rainbowIntensity = 250;
   static int loopCounter = 0;
   for (int i = 0; i < img.height(); i++) {
-    CRGB col = CHSV(i + loopCounter, 200, 250);
+    CRGB col = CHSV(i + loopCounter, rainbowSaturation, rainbowIntensity);
     unsigned int colour = col.red/8 << 11 | col.green/4 << 5 | col.blue/8;
     img.drawFastHLine(0, i, img.width(), colour);
   }

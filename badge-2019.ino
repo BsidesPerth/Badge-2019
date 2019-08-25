@@ -25,13 +25,7 @@
 // Add this in Preferences -> Additional Boards URLs:
 //  https://dl.espressif.com/dl/package_esp32_index.json
 //
-// Boards settings:
-// * Board: WEMOS LOLIN32
-// * Upload Speed: 921600 (default)
-// * Flash Frequency: 80MHz (default)
-// * Partition Scheme: Default
-//
-// Alternate board settings:
+// Board settings:
 // * Board: ESP32 Dev Module
 // * Upload Speed: 921600 (default)
 // * CPU Frequency: 240MHz (default)
@@ -41,17 +35,28 @@
 // * Partition Scheme: Default 4MB with spiffs (default)
 // * Core debug level: None -> Verbose (extra logging over serial)
 // * PSRAM: Disabled (default)
+//
+// Alternate board settings:
+// * Board: WEMOS LOLIN32
+// * Upload Speed: 921600 (default)
+// * Flash Frequency: 80MHz (default)
+// * Partition Scheme: Default
+//
 
 #include <WiFi.h>  // ESP32 inbuilt library
 #include <SPI.h>  // For TFT, ESP32 inbuilt library
 #include <WiFiUdp.h> // For NTPClient, inbuilt libray
 
+#define FS_NO_GLOBALS
+#include <FS.h>
+
+#ifdef ESP32
+  #include "SPIFFS.h" // ESP32 only
+#endif
+
 #include <TaskScheduler.h>  // https://github.com/arkhipenko/TaskScheduler
 #include <NTPClient.h>  // https://github.com/arduino-libraries/NTPClient
 #include <FastLED.h>  // https://github.com/FastLED/FastLED
-
-#define FS_NO_GLOBALS
-#include <FS.h>  // for JPEG library?
 #include <JPEGDecoder.h>  // https://github.com/Bodmer/JPEGDecoder
 
 #include "TFT_eSPI/TFT_eSPI.h"   // Local copy of TFT_eSPI: https://github.com/Bodmer/TFT_eSPI
@@ -66,24 +71,28 @@ void runWifiCheck();
 void runTimeSync();
 void runDisplayTime();
 void idleDisplay();
+bool idleOnEnable();
+void imagesDisplay();
 // - tasks themselves 
 //     Task tTask(update time ms, update count, address of function);
 Task tWifiCheck(  5 * 1000, TASK_FOREVER, &runWifiCheck);
 Task tTimeSync( 60 * 1000, TASK_FOREVER, &runTimeSync);
 Task tDisplayTime( 1 * 1000, TASK_FOREVER, &runDisplayTime);
-Task tIdleDisplay( 10, TASK_FOREVER, &idleDisplay);
+Task tIdleDisplay( 10, TASK_FOREVER, &idleDisplay, NULL, false, &idleOnEnable);
+Task tImagesDisplay( 3000, TASK_FOREVER, &imagesDisplay);
+
+void setupWifi();
 
 void setup(void) {
   Serial.begin(115200);
   Serial.println("Bsides Badge 2019 starting");
 
-  // Delay to help notice restarts and bootloops
-  //delay(1000);
-
   tft.init();
 
   //demoScreen();
+  
   idleSetup();
+  imagesSetup();
 
   // Start wifi
   setupWifi();
@@ -95,11 +104,14 @@ void setup(void) {
   runner.addTask(tTimeSync);
   runner.addTask(tDisplayTime);
   runner.addTask(tIdleDisplay);
+  runner.addTask(tImagesDisplay);
   // - start tasks
   tWifiCheck.enable();
   tTimeSync.enable();
   //tDisplayTime.enable();
-  tIdleDisplay.enable();
+  //tIdleDisplay.enable();
+  tImagesDisplay.enable();
+  tImagesDisplay.forceNextIteration();
   Serial.println("Initialised scheduler");
 
   // Print badges unique ID (mac address)
