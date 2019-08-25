@@ -11,6 +11,7 @@ NTPClient timeClient(ntpUDP, "au.pool.ntp.org", timeOffset);
 
 
 bool timeServerSetup = false;
+bool timeValid = false;
 
 void runTimeSync() {
   // Only start or update time server while connected to wifi
@@ -26,12 +27,18 @@ void runTimeSync() {
     if (timeServerSetup) {
       // Update time with NTP
       // Update at our own rate specified by how often task runs
-      timeClient.forceUpdate();
-      Serial.print("{TIME} Updated time: ");
-      Serial.print(getDateStr());
-      Serial.print(" ");
-      Serial.print(getTimeStr());
-      Serial.println();
+      bool result = timeClient.forceUpdate();
+
+      if (result) {
+        timeValid = true;
+        Serial.print("{TIME} Updated time: ");
+        Serial.print(getDateStr());
+        Serial.print(" ");
+        Serial.print(getTimeStr());
+        Serial.println();
+      } else {
+        Serial.println("{TIME} Update failed");
+      }      
     }
   }
 }
@@ -84,5 +91,7 @@ void timeToScreen() {
 
 void runDisplayTime() {
   // TODO: Check for whether NTP has successfully updated
-  timeToScreen();
+  if (timeValid) {
+    timeToScreen();
+  }
 }

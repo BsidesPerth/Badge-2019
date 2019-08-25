@@ -131,6 +131,10 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
 
   // Kick NTP
   tTimeSync.forceNextIteration();
+
+  // Get speaker updates from server
+  tsendGET.enable();
+  tsendGET.forceNextIteration();
 }
 
 void setupWifi()

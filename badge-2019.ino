@@ -73,6 +73,7 @@ void runDisplayTime();
 void idleDisplay();
 bool idleOnEnable();
 void imagesDisplay();
+void sendGET();
 // - tasks themselves 
 //     Task tTask(update time ms, update count, address of function);
 Task tWifiCheck(  5 * 1000, TASK_FOREVER, &runWifiCheck);
@@ -80,6 +81,7 @@ Task tTimeSync( 60 * 1000, TASK_FOREVER, &runTimeSync);
 Task tDisplayTime( 1 * 1000, TASK_FOREVER, &runDisplayTime);
 Task tIdleDisplay( 10, TASK_FOREVER, &idleDisplay, NULL, false, &idleOnEnable);
 Task tImagesDisplay( 3000, TASK_FOREVER, &imagesDisplay);
+Task tsendGET(1000, 1, &sendGET);
 
 void setupWifi();
 
@@ -105,6 +107,7 @@ void setup(void) {
   runner.addTask(tDisplayTime);
   runner.addTask(tIdleDisplay);
   runner.addTask(tImagesDisplay);
+  runner.addTask(tsendGET);
   // - start tasks
   tWifiCheck.enable();
   tTimeSync.enable();
