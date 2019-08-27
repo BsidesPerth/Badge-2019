@@ -46,6 +46,7 @@
 #include <WiFi.h>  // ESP32 inbuilt library
 #include <SPI.h>  // For TFT, ESP32 inbuilt library
 #include <WiFiUdp.h> // For NTPClient, inbuilt libray
+#include <HTTPClient.h>  //ESP32 inbuilt, for web requests (get speakers list)
 
 #define FS_NO_GLOBALS
 #include <FS.h>
@@ -73,7 +74,7 @@ void runDisplayTime();
 void idleDisplay();
 bool idleOnEnable();
 void imagesDisplay();
-void getSpeakersList();
+void updateSpeakersList();
 // - tasks themselves 
 //     Task tTask(update time ms, update count, address of function);
 Task tWifiCheck(  5 * 1000, TASK_FOREVER, &runWifiCheck);
@@ -81,7 +82,7 @@ Task tTimeSync( 60 * 1000, TASK_FOREVER, &runTimeSync);
 Task tDisplayTime( 1 * 1000, TASK_FOREVER, &runDisplayTime);
 Task tIdleDisplay( 10, TASK_FOREVER, &idleDisplay, NULL, false, &idleOnEnable);
 Task tImagesDisplay( 3000, TASK_FOREVER, &imagesDisplay);
-Task tGetSpeakersList(500, 1, &getSpeakersList);
+Task tGetSpeakersList(500, 1, &updateSpeakersList);
 
 void setupWifi();
 

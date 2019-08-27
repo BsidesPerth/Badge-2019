@@ -1,73 +1,81 @@
 // Show the speakers and sessions
 
-//URL of test file http://m.uploadedit.com/bbtc/1566736690361.txt
-const char* host = "m.uploadedit.com"; // webserver
-const char* url = "/bbtc/1566736690361.txt";
+const char* speakersUrl = "http://m.uploadedit.com/bbtc/1566736690361.txt";
+//const char* speakersUrl = "http://m.uploadedit.com/bbtc/1566736690362.txt";
 const char* speakersFilename = "/speakers.txt";
 
 // Contact website and download list of speakers. Store list in SPIFFS.
-void getSpeakersList()
+void updateSpeakersList()
 {
   if (WiFi.status() == WL_CONNECTED) {
-    // Examples: ESP32 / Wifi / WifiClient
     Serial.println("{SPEAKERS} Get speakers list from website");
+    
+    String speakerListStr;
+    downloadSpeakersList(speakerListStr);
 
-    // Use WiFiClient class to create TCP connections
-    WiFiClient client;
-    const int httpPort = 80;
-    if (!client.connect(host, httpPort)) {
-      Serial.println("connection failed");
-      return;
-    }
-
-    Serial.print("Requesting URL: ");
-    Serial.println(url);
-
-    // This will send the request to the server
-    client.print(String("GET ") + url + " HTTP/1.1\r\n" +
-                 "Host: " + host + "\r\n" +
-                 "Connection: close\r\n\r\n");
-    unsigned long timeout = millis();
-    while (client.available() == 0) {
-      if (millis() - timeout > 5000) {
-        Serial.println(">>> Client Timeout !");
-        client.stop();
-        return;
-      }
-    }
-
-    // Read all the lines of the reply from server and print them to Serial
-    bool fileStarted = false;
-    String file;
-    while (client.available()) {
-      String line = client.readStringUntil('\r');
-      Serial.print(line);
-
-      if (fileStarted) {
-        file += line;
-      }
-
-      // Assume that when we see "Content-Length" that the data is to follow
-      if (line.indexOf("Content-Length") != -1) {
-        fileStarted = true;
-        Serial.println("\n=== Start of Speakers List ===");
-      }
-    }
-
-    Serial.println();
-    Serial.println("closing connection");
-
-    // Check for changes
-    String diskFile = readFile(speakersFilename);
-    Serial.println("Old:");
-    Serial.println(diskFile);
-    Serial.println("New:");
-    Serial.println(file);
-    if (!diskFile.equals(file)) {
-      Serial.println("{SPEAKERS} Writing list to file");
-      writeFile(speakersFilename, file.c_str());
+    if (speakerListStr.length() > 0) {
+      writeSpeakerListIfNew(speakerListStr);
     } else {
-      Serial.println("{SPEAKERS} No change to speakers file");
+      Serial.println("{SPEAKERS} No list received");
     }
+  } else {
+    Serial.println("{SPEAKERS} No wifi connection, cannot update");
   }
+}
+
+void downloadSpeakersList(String & speakerListStr) {
+  // Use HTTPClient to do web requests
+  HTTPClient http;
+  Serial.print("[SPEAKERS] Setup HTTP Request: ");
+  Serial.println(speakersUrl);
+  //http.begin("https://www.howsmyssl.com/a/check", ca); //HTTPS
+  http.begin(speakersUrl); //HTTP
+
+  Serial.flush();
+  Serial.print("[SPEAKERS] GET...\n");
+  // start connection and send HTTP header
+  int httpCode = http.GET();
+
+  // httpCode will be negative on error
+  if (httpCode > 0) {
+    // HTTP header has been send and Server response header has been handled
+    Serial.flush();
+    Serial.printf("[SPEAKERS] HTTP Response Code: %d\n", httpCode);
+
+    // file found at server
+    if (httpCode == HTTP_CODE_OK) {
+      speakerListStr = http.getString();
+    }
+  } else {
+    Serial.flush();
+    Serial.printf("[SPEAKERS] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
+  }
+
+  http.end();
+}
+
+void writeSpeakerListIfNew(String & speakerListStr) {
+  // ESP32 debug logging was clobbering following log lines
+  // flush() clears things up
+  Serial.flush();
+  
+  // Dump response
+  Serial.println("{SPEAKERS) Response text:");
+  Serial.println(speakerListStr);
+  
+  // Check for changes
+  String diskFile = readFile(speakersFilename);
+  if (diskFile.length() > 0) {
+    Serial.println("{SPEAKERS) Currently on badge:");
+    Serial.println(diskFile);
+  }
+  if (!diskFile.equals(speakerListStr)) {
+    // File changed so save to disk
+    Serial.println("{SPEAKERS} Writing list to file");
+    //Serial.println("{SPEAKERS} NOT");
+    writeFile(speakersFilename, speakerListStr.c_str());
+  } else {
+    Serial.println("{SPEAKERS} No change to speakers file");
+  }
+  
 }
