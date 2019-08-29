@@ -65,6 +65,30 @@
 // TFT Screen
 TFT_eSPI tft = TFT_eSPI();  // Create screen object 240x240
 
+// Buttons
+const int pinSw1 = 0;  //Up
+//const int pinSw2 = 0; // ESP_EN -- reset pin on back
+const int pinSw3 = 34; //Right
+const int pinSw4 = 36; //Down
+const int pinSw5 = 35; //Left
+const int pinSw6 = 2;  //Top
+const int pinSw7 = 39; //Mid
+const int pinSw8 = 33; //Bottom
+
+// Charging indication
+const int pinChargeInd = 32;
+
+// Output pins
+const int pinOutR = 22;
+const int pinOutG = 21;
+const int pinOutB = 19;
+const int pinOutH = 18;
+const int pinOutV = 5;
+
+// Addressable LEDs (APA102s)
+const int pinLedsData = 14;
+const int pinLedsClock = 12;
+
 // Task Scheduler
 Scheduler runner;
 // - prototypes for tasks
@@ -75,6 +99,8 @@ void idleDisplay();
 bool idleOnEnable();
 void imagesDisplay();
 void updateSpeakersList();
+void testLoop();
+bool testSetup();
 // - tasks themselves 
 //     Task tTask(update time ms, update count, address of function);
 Task tWifiCheck(  5 * 1000, TASK_FOREVER, &runWifiCheck);
@@ -83,12 +109,15 @@ Task tDisplayTime( 1 * 1000, TASK_FOREVER, &runDisplayTime);
 Task tIdleDisplay( 10, TASK_FOREVER, &idleDisplay, NULL, false, &idleOnEnable);
 Task tImagesDisplay( 3000, TASK_FOREVER, &imagesDisplay);
 Task tGetSpeakersList(500, 1, &updateSpeakersList);
+Task tTestLoop(250, TASK_FOREVER, &testLoop, NULL, false, &testSetup);
 
 void setupWifi();
 
 void setup(void) {
   Serial.begin(115200);
   Serial.println("Bsides Badge 2019 starting");
+
+  pinMode(pinSw1, INPUT);
 
   tft.init();
 
@@ -115,13 +144,15 @@ void setup(void) {
   runner.addTask(tIdleDisplay);
   runner.addTask(tImagesDisplay);
   runner.addTask(tGetSpeakersList);
+  runner.addTask(tTestLoop);
   // - start tasks
   tWifiCheck.enable();
   tTimeSync.enable();
   //tDisplayTime.enable();
   //tIdleDisplay.enable();
-  tImagesDisplay.enable();
-  tImagesDisplay.forceNextIteration();
+  //tImagesDisplay.enable();
+  //tImagesDisplay.forceNextIteration();
+  tTestLoop.enable();
   Serial.println("Initialised scheduler");
 
   // Print badges unique ID (mac address)
