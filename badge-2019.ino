@@ -20,7 +20,7 @@
 //                                                                                                                             
 // Bsides Badge 2019
 //  ( ascii art: http://patorjk.com/software/taag )
-//                                                                                                                  ,---.-,    
+//                                                                                                                     
 // __ Arduino IDE setup __
 // Add this in Preferences -> Additional Boards URLs:
 //  https://dl.espressif.com/dl/package_esp32_index.json
@@ -64,6 +64,7 @@
 
 // TFT Screen
 TFT_eSPI tft = TFT_eSPI();  // Create screen object 240x240
+TFT_eSprite img = TFT_eSprite(&tft);  // Sprite for in memory rendering
 
 // Buttons
 const int pinSw1 = 0;  //Up
@@ -99,8 +100,8 @@ void idleDisplay();
 bool idleOnEnable();
 void imagesDisplay();
 void updateSpeakersList();
-void testLoop();
-bool testSetup();
+void checkLoop();
+bool checkSetup();
 // - tasks themselves 
 //     Task tTask(update time ms, update count, address of function);
 Task tWifiCheck(  5 * 1000, TASK_FOREVER, &runWifiCheck);
@@ -109,7 +110,7 @@ Task tDisplayTime( 1 * 1000, TASK_FOREVER, &runDisplayTime);
 Task tIdleDisplay( 10, TASK_FOREVER, &idleDisplay, NULL, false, &idleOnEnable);
 Task tImagesDisplay( 3000, TASK_FOREVER, &imagesDisplay);
 Task tGetSpeakersList(500, 1, &updateSpeakersList);
-Task tTestLoop(250, TASK_FOREVER, &testLoop, NULL, false, &testSetup);
+Task tCheckLoop(10, TASK_FOREVER, &checkLoop, NULL, false, &checkSetup);
 
 void setupWifi();
 
@@ -117,7 +118,7 @@ void setup(void) {
   Serial.begin(115200);
   Serial.println("Bsides Badge 2019 starting");
 
-  pinMode(pinSw1, INPUT);
+  setupButtons(); 
 
   tft.init();
 
@@ -126,11 +127,8 @@ void setup(void) {
     while (1) yield(); // Stay here twiddling thumbs waiting
   }
 
-  //demoScreen();
-  //filesTest();
-  
-  idleSetup();
-  imagesSetup();
+  //imagesSetup();
+  //setupSpriteTest();
 
   // Start wifi
   setupWifi();
@@ -144,15 +142,15 @@ void setup(void) {
   runner.addTask(tIdleDisplay);
   runner.addTask(tImagesDisplay);
   runner.addTask(tGetSpeakersList);
-  runner.addTask(tTestLoop);
+  runner.addTask(tCheckLoop);
   // - start tasks
   tWifiCheck.enable();
-  tTimeSync.enable();
+  //tTimeSync.enable();
   //tDisplayTime.enable();
   //tIdleDisplay.enable();
   //tImagesDisplay.enable();
   //tImagesDisplay.forceNextIteration();
-  tTestLoop.enable();
+  tCheckLoop.enable();
   Serial.println("Initialised scheduler");
 
   // Print badges unique ID (mac address)
@@ -164,6 +162,7 @@ void setup(void) {
 
 void loop() {
   runner.execute();
+  //loopSpriteTest();
 }
 
 void demoScreen() {
@@ -188,6 +187,16 @@ void demoScreen() {
   tft.setTextColor(TFT_BLUE, TFT_BLACK);
   tft.println("Blue text");
 
+}
+
+void setupButtons() {
+  pinMode(pinSw1, INPUT);
+  pinMode(pinSw3, INPUT);
+  pinMode(pinSw4, INPUT);
+  pinMode(pinSw5, INPUT);
+  pinMode(pinSw6, INPUT);
+  pinMode(pinSw7, INPUT);
+  pinMode(pinSw8, INPUT);
 }
 
 // Task cycle LEDs

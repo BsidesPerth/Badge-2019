@@ -15,7 +15,6 @@
 // * Adafruit free fonts available (better range of heights) but might be slower, more flickery?
 
 
-TFT_eSprite img = TFT_eSprite(&tft);
 
 void idleSetup(void) {
   img.createSprite(230, 230);

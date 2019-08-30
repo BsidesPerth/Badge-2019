@@ -1,8 +1,9 @@
-/*
-    This sketch shows the WiFi event usage
-
-*/
-
+//
+// Wifi management for badge
+// 
+// Improved reconnect and logging. Can also trigger events
+// on connect.
+//
 /*
   WiFi Events
 
@@ -130,10 +131,10 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
   Serial.println(IPAddress(info.got_ip.ip_info.ip.addr));
 
   // Kick NTP
-  tTimeSync.forceNextIteration();
+  //tTimeSync.forceNextIteration();
 
   // Get speaker updates from server
-  tGetSpeakersList.enable();
+  //tGetSpeakersList.enable();
 }
 
 void setupWifi()
@@ -150,11 +151,6 @@ void setupWifi()
     Serial.print("WiFi lost connection. Reason: ");
     Serial.println(info.disconnected.reason);
   }, WiFiEvent_t::SYSTEM_EVENT_STA_DISCONNECTED);
-
-  // Remove WiFi event
-  //Serial.print("WiFi Event ID: ");
-  //Serial.println(eventID);
-  // WiFi.removeEvent(eventID);
 
   WiFi.begin(ssid, password);
 

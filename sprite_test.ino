@@ -1,11 +1,11 @@
 /*
-  Sketch to show scrolling of the graphics in sprites.
-  Scrolling in this way moves the pixels in a defined rectangle
-  within the Sprite. By defalt the whole sprite is scrolled.
-  The gap left by scrolling is filled with a defined colour.
+  Display "flicker free" scrolling text and updating number
 
   Example for library:
   https://github.com/Bodmer/TFT_eSPI
+
+  The sketch has been tested on a 320x240 ILI9341 based TFT, it
+  coule be adapted for other screen sizes.
 
   A Sprite is notionally an invisible graphics screen that is
   kept in the processors RAM. Graphics can be drawn into the
@@ -14,117 +14,169 @@
   any position. If there is sufficient RAM then the Sprite can
   be the same size as the screen and used as a frame buffer.
 
-  A 16 bit Sprite occupies (2 * width * height) bytes in RAM.
+  The Sprite occupies (2 * width * height) bytes.
 
-  An 8 bit Sprite occupies (width * height) bytes in RAM.
+  On a ESP8266 Sprite sizes up to 128 x 160 can be accomodated,
+  this size requires 128*160*2 bytes (40kBytes) of RAM, this must be
+  available or the processor will crash. You need to make the sprite
+  small enough to fit, with RAM spare for any "local variables" that
+  may be needed by your sketch and libraries.
 
+  Created by Bodmer 15/11/17
+
+  #########################################################################
+  ###### DON'T FORGET TO UPDATE THE User_Setup.h FILE IN THE LIBRARY ######
+  #########################################################################
 */
 
-//TFT_eSprite graph1 = TFT_eSprite(&tft); // Sprite object graph1
-//
-//TFT_eSprite stext1 = TFT_eSprite(&tft); // Sprite object stext1
-//
-//TFT_eSprite stext2 = TFT_eSprite(&tft); // Sprite object stext2
+// Size of sprite image for the scrolling text, this requires ~14 Kbytes of RAM
+#define IWIDTH  240
+#define IHEIGHT 30
 
-int graphVal = 1;
-int delta = 1;
-int grid = 0;
-int tcount = 0;
+// Pause in milliseconds to set scroll speed
+#define WAIT 0
 
-//==========================================================================================
-void spriteTestSetup() {
-  tft.fillScreen(TFT_BLACK);
-
-  // Set "cursor" at top left corner of display (0,0) and select font 4
-  tft.setCursor(0, 0, 0);
-  tft.setTextColor(TFT_WHITE, TFT_BLACK);
-  
-  tft.setTextFont(1);
-  tft.println("Bsides 2019\n");
-
-  tft.setTextFont(2);
-  tft.println("Bsides 2019\n");
-
-  tft.setTextFont(4);
-  tft.println("Bsides 2019\n");
-
-  tft.setTextFont(4);
-  tft.setTextSize(2);
-  tft.println("Bsides 2019\n");
-
-//  // Create a sprite for the graph
-//  graph1.setColorDepth(8);
-//  graph1.createSprite(128, 61);
-//  graph1.fillSprite(TFT_BLUE); // Note: Sprite is filled with black when created
-//
-//  // The scroll area is set to the full sprite size upon creation of the sprite
-//  // but we can change that by defining a smaller area using "setScrollRect()"if needed
-//  // parameters are x,y,w,h,color as in drawRect(), the color fills the gap left by scrolling
-//  //graph1.setScrollRect(64, 0, 64, 61, TFT_DARKGREY);  // Try this line to change the graph scroll area
-//
-//  // Create a sprite for the scrolling numbers
-//  stext1.setColorDepth(8);
-//  stext1.createSprite(32, 64);
-//  stext1.fillSprite(TFT_BLUE); // Fill sprite with blue
-//  stext1.setScrollRect(0, 0, 32, 64, TFT_BLUE);     // here we set scroll gap fill color to blue
-//  stext1.setTextColor(TFT_WHITE); // White text, no background
-//  stext1.setTextDatum(BR_DATUM);  // Bottom right coordinate datum
-//
-//  // Create a sprite for Hello World
-//  stext2.setColorDepth(8);
-//  stext2.createSprite(80, 16);
-//  stext2.fillSprite(TFT_DARKGREY);
-//  stext2.setScrollRect(0, 0, 40, 16, TFT_DARKGREY); // Scroll the "Hello" in the first 40 pixels
-//  stext2.setTextColor(TFT_WHITE); // White text, no background
+// -------------------------------------------------------------------------
+// Setup
+// -------------------------------------------------------------------------
+void setupSpriteTest(void) {
+  tft.fillScreen(TFT_BLUE);
 }
 
-//==========================================================================================
-void spriteTestLoop() {
-//  // Draw point in graph1 sprite at far right edge (this will scroll left later)
-//  graph1.drawFastVLine(127,60-graphVal,2,TFT_YELLOW); // draw 2 pixel point on graph
-//
-//  // Draw number in stext1 sprite at 31,63 (bottom right datum set)
-//  stext1.drawNumber(graphVal, 31, 63, 2); // plot value in font 2
-//
-//  // Push the sprites onto the TFT at specied coordinates
-//  graph1.pushSprite(0, 0);
-//  stext1.pushSprite(0, 64);
-//  stext2.pushSprite(40, 70);
-//
-//  // Change the value to plot
-//  graphVal+=delta;
-//
-//  // If the value reaches a limit, then change delta of value
-//  if (graphVal >= 60)     delta = -1;  // ramp down value
-//  else if (graphVal <= 1) delta = +1;  // ramp up value
-//
-//  //delay(50); // wait so things do not scroll too fast
-//
-//  // Now scroll the sprites scroll(dt, dy) where:
-//  // dx is pixels to scroll, left = negative value, right = positive value
-//  // dy is pixels to scroll, up = negative value, down = positive value
-//  graph1.scroll(-1, 0); // scroll graph 1 pixel left, 0 up/down
-//  stext1.scroll(0,-16); // scroll stext 0 pixels left/right, 16 up
-//  stext2.scroll(1);     // scroll stext 1 pixel right, up/down default is 0
-//
-//  // Draw the grid on far right edge of sprite as graph has now moved 1 pixel left
-//  grid++;
-//  if (grid >= 10)
-//  { // Draw a vertical line if we have scrolled 10 times (10 pixels)
-//    grid = 0;
-//    graph1.drawFastVLine(127, 0, 61, TFT_NAVY); // draw line on graph
-//  }
-//  else
-//  { // Otherwise draw points spaced 10 pixels for the horizontal grid lines
-//    for (int p = 0; p <= 60; p += 10) graph1.drawPixel(127, p, TFT_NAVY);
-//  }
-//
-//  tcount--;
-//  if (tcount <=0)
-//  { // If we have scrolled 40 pixels the redraw text
-//    tcount = 40;
-//    stext2.drawString("Hello World", 6, 0, 2); // draw at 6,0 in sprite, font 2
-//  }
+// -------------------------------------------------------------------------
+// Main loop
+// -------------------------------------------------------------------------
+void loopSpriteTest() {
 
-} // Loop back and do it all again
-//==========================================================================================
+  while (1)
+  {
+    // Create the sprite and clear background to black
+    img.createSprite(IWIDTH, IHEIGHT);
+    //img.fillSprite(TFT_BLACK); // Optional here as we fill the sprite later anyway
+
+    for (int pos = IWIDTH; pos > 0; pos--)
+    {
+      build_banner("Hello World", pos);
+      img.pushSprite(0, 0);
+
+      build_banner("TFT_eSPI sprite" , pos);
+      img.pushSprite(0, 50);
+
+      delay(WAIT);
+    }
+
+    // Delete sprite to free up the memory
+    img.deleteSprite();
+
+    // Create a sprite of a different size
+    numberBox(random(100), 60, 100);
+
+  }
+}
+
+// #########################################################################
+// Build the scrolling sprite image from scratch, draw text at x = xpos
+// #########################################################################
+
+void build_banner(String msg, int xpos)
+{
+  int h = IHEIGHT;
+
+  // We could just use fillSprite(color) but lets be a bit more creative...
+
+  // Fill with rainbow stripes
+  while (h--) img.drawFastHLine(0, h, IWIDTH, rainbow(h * 4));
+
+  // Draw some graphics, the text will apear to scroll over these
+  img.fillRect  (IWIDTH / 2 - 20, IHEIGHT / 2 - 10, 40, 20, TFT_YELLOW);
+  img.fillCircle(IWIDTH / 2, IHEIGHT / 2, 10, TFT_ORANGE);
+
+  // Now print text on top of the graphics
+  img.setTextSize(1);           // Font size scaling is x1
+  img.setTextFont(4);           // Font 4 selected
+  img.setTextColor(TFT_BLACK);  // Black text, no background colour
+  img.setTextWrap(false);       // Turn of wrap so we can print past end of sprite
+
+  // Need to print twice so text appears to wrap around at left and right edges
+  img.setCursor(xpos, 2);  // Print text at xpos
+  img.print(msg);
+
+  img.setCursor(xpos - IWIDTH, 2); // Print text at xpos - sprite width
+  img.print(msg);
+}
+
+// #########################################################################
+// Create sprite, plot graphics in it, plot to screen, then delete sprite
+// #########################################################################
+void numberBox(int num, int x, int y)
+{
+  // Create a sprite 80 pixels wide, 50 high (8kbytes of RAM needed)
+  img.createSprite(80, 50);
+
+  // Fill it with black
+  img.fillSprite(TFT_BLACK);
+
+  // Draw a backgorund of 2 filled triangles
+  img.fillTriangle(  0, 0,  0, 49, 40, 25, TFT_RED);
+  img.fillTriangle( 79, 0, 79, 49, 40, 25, TFT_DARKGREEN);
+
+  // Set the font parameters
+  img.setTextSize(1);           // Font size scaling is x1
+  img.setFreeFont(&FreeSerifBoldItalic24pt7b);  // Select free font
+  img.setTextColor(TFT_WHITE);  // White text, no background colour
+
+  // Set text coordinate datum to middle centre
+  img.setTextDatum(MC_DATUM);
+
+  // Draw the number in middle of 80 x 50 sprite
+  img.drawNumber(num, 40, 25);
+
+  // Push sprite to TFT screen CGRAM at coordinate x,y (top left corner)
+  img.pushSprite(x, y);
+
+  // Delete sprite to free up the RAM
+  img.deleteSprite();
+}
+
+
+// #########################################################################
+// Return a 16 bit rainbow colour
+// #########################################################################
+unsigned int rainbow(byte value)
+{
+  // Value is expected to be in range 0-127
+  // The value is converted to a spectrum colour from 0 = red through to 127 = blue
+
+  byte red   = 0; // Red is the top 5 bits of a 16 bit colour value
+  byte green = 0;// Green is the middle 6 bits
+  byte blue  = 0; // Blue is the bottom 5 bits
+
+  byte sector = value >> 5;
+  byte amplit = value & 0x1F;
+
+  switch (sector)
+  {
+    case 0:
+      red   = 0x1F;
+      green = amplit;
+      blue  = 0;
+      break;
+    case 1:
+      red   = 0x1F - amplit;
+      green = 0x1F;
+      blue  = 0;
+      break;
+    case 2:
+      red   = 0;
+      green = 0x1F;
+      blue  = amplit;
+      break;
+    case 3:
+      red   = 0;
+      green = 0x1F - amplit;
+      blue  = 0x1F;
+      break;
+  }
+
+  return red << 11 | green << 6 | blue;
+}
