@@ -131,10 +131,10 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
   Serial.println(IPAddress(info.got_ip.ip_info.ip.addr));
 
   // Kick NTP
-  //tTimeSync.forceNextIteration();
+  tTimeSync.forceNextIteration();
 
   // Get speaker updates from server
-  //tGetSpeakersList.enable();
+  tGetSpeakersList.enable();
 }
 
 void setupWifi()

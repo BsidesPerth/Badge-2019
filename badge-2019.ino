@@ -55,12 +55,14 @@
   #include "SPIFFS.h" // ESP32 only
 #endif
 
+// Libraries from Arduino Library manager (links to help point to correct one)
 #include <TaskScheduler.h>  // https://github.com/arkhipenko/TaskScheduler
 #include <NTPClient.h>  // https://github.com/arduino-libraries/NTPClient
 #include <FastLED.h>  // https://github.com/FastLED/FastLED
 #include <JPEGDecoder.h>  // https://github.com/Bodmer/JPEGDecoder
 
 #include "TFT_eSPI/TFT_eSPI.h"   // Local copy of TFT_eSPI: https://github.com/Bodmer/TFT_eSPI
+#include "timelib.h"
 
 // TFT Screen
 TFT_eSPI tft = TFT_eSPI();  // Create screen object 240x240
@@ -102,6 +104,8 @@ void imagesDisplay();
 void updateSpeakersList();
 void checkLoop();
 bool checkSetup();
+bool enableSpeakersDisplay();
+void loopSpeakersDisplay();
 // - tasks themselves 
 //     Task tTask(update time ms, update count, address of function);
 Task tWifiCheck(  5 * 1000, TASK_FOREVER, &runWifiCheck);
@@ -110,7 +114,8 @@ Task tDisplayTime( 1 * 1000, TASK_FOREVER, &runDisplayTime);
 Task tIdleDisplay( 10, TASK_FOREVER, &idleDisplay, NULL, false, &idleOnEnable);
 Task tImagesDisplay( 3000, TASK_FOREVER, &imagesDisplay);
 Task tGetSpeakersList(500, 1, &updateSpeakersList);
-Task tCheckLoop(10, TASK_FOREVER, &checkLoop, NULL, false, &checkSetup);
+Task tSpeakersDisplay(10, TASK_FOREVER, &loopSpeakersDisplay, NULL, false, &enableSpeakersDisplay);
+Task tCheckLoop(1000, TASK_FOREVER, &checkLoop, NULL, false, &checkSetup);
 
 void setupWifi();
 
@@ -142,15 +147,17 @@ void setup(void) {
   runner.addTask(tIdleDisplay);
   runner.addTask(tImagesDisplay);
   runner.addTask(tGetSpeakersList);
+  runner.addTask(tSpeakersDisplay);
   runner.addTask(tCheckLoop);
   // - start tasks
   tWifiCheck.enable();
-  //tTimeSync.enable();
+  tTimeSync.enable();
   //tDisplayTime.enable();
   //tIdleDisplay.enable();
   //tImagesDisplay.enable();
   //tImagesDisplay.forceNextIteration();
-  tCheckLoop.enable();
+  //tCheckLoop.enable();
+  tSpeakersDisplay.enable();
   Serial.println("Initialised scheduler");
 
   // Print badges unique ID (mac address)
