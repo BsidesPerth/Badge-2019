@@ -48,7 +48,6 @@ String getTimeStr() {
 }
 
 // From: https://github.com/taranais/NTPClient/blob/master/NTPClient.cpp
-#define LEAP_YEAR(Y)     ( (Y>0) && !(Y%4) && ( (Y%100) || !(Y%400) ) )
 String getDateStr() {
   unsigned long rawTime = timeClient.getEpochTime() / 86400L;  // in days
   unsigned long days = 0, year = 1970;

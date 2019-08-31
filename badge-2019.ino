@@ -1,21 +1,22 @@
-//
-//
-//
-//      ,---,.                                                                    ,----,     ,----..        ,---,  '   ,'  '.  
-//    ,'  .'  \             ,--,         ,---,                                  .'   .' \   /   /   \    ,`--.' | /   /      \ 
-//  ,---.' .' |           ,--.'|       ,---.'|                                ,----,'    | /   .     :  /    /  :.   ;  ,/.  : 
-//  |   |  |: | .--.--.   |  |,        |   | :            .--.--.             |    :  .  ;.   /   ;.  \:    |.' ''   |  | :  ; 
-//  :   :  :  //  /    '  `--'_        |   | |   ,---.   /  /    '            ;    |.'  /.   ;   /  ` ;`----':  |'   |  ./   : 
-//  :   |    ;|  :  /`./  ,' ,'|     ,--.__| |  /     \ |  :  /`./            `----'/  ; ;   |  ; \ ; |   '   ' ;|   :       , 
-//  |   :     \  :  ;_    '  | |    /   ,'   | /    /  ||  :  ;_                /  ;  /  |   :  | ; | '   |   | | \   \      | 
-//  |   |   . |\  \    `. |  | :   .   '  /  |.    ' / | \  \    `.            ;  /  /-, .   |  ' ' ' :   '   : ;  `---`---  ; 
-//  '   :  '; | `----.   \'  : |__ '   ; |:  |'   ;   /|  `----.   \          /  /  /.`| '   ;  \; /  |   |   | '     |   |  | 
-//  |   |  | ; /  /`--'  /|  | '.'||   | '/  ''   |  / | /  /`--'  /        ./__;      :  \   \  ',  /    '   : |     '   :  ; 
-//  |   :   / '--'.     / ;  :    ;|   :    :||   :    |'--'.     /         |   :    .'    ;   :    /     ;   |.'     |   |  ' 
-//  |   | ,'    `--'---'  |  ,   /  \   \  /   \   \  /   `--'---'          ;   | .'        \   \ .'      '---'       ;   |.'  
-//  `----'                 ---`-'    `----'     `----'                      `---'            `---`                    '---'    
-//                                                                                                                             
-//
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                                               //
+//      ,---,.                                                                    ,----,     ,----..        ,---,  '   ,'  '.    //
+//    ,'  .'  \             ,--,         ,---,                                  .'   .' \   /   /   \    ,`--.' | /   /      \   //
+//  ,---.' .' |           ,--.'|       ,---.'|                                ,----,'    | /   .     :  /    /  :.   ;  ,/.  :   //
+//  |   |  |: | .--.--.   |  |,        |   | :            .--.--.             |    :  .  ;.   /   ;.  \:    |.' ''   |  | :  ;   //
+//  :   :  :  //  /    '  `--'_        |   | |   ,---.   /  /    '            ;    |.'  /.   ;   /  ` ;`----':  |'   |  ./   :   //
+//  :   |    ;|  :  /`./  ,' ,'|     ,--.__| |  /     \ |  :  /`./            `----'/  ; ;   |  ; \ ; |   '   ' ;|   :       ,   //
+//  |   :     \  :  ;_    '  | |    /   ,'   | /    /  ||  :  ;_                /  ;  /  |   :  | ; | '   |   | | \   \      |   //
+//  |   |   . |\  \    `. |  | :   .   '  /  |.    ' / | \  \    `.            ;  /  /-, .   |  ' ' ' :   '   : ;  `---`---  ;   //
+//  '   :  '; | `----.   \'  : |__ '   ; |:  |'   ;   /|  `----.   \          /  /  /.`| '   ;  \; /  |   |   | '     |   |  |   //
+//  |   |  | ; /  /`--'  /|  | '.'||   | '/  ''   |  / | /  /`--'  /        ./__;      :  \   \  ',  /    '   : |     '   :  ;   //
+//  |   :   / '--'.     / ;  :    ;|   :    :||   :    |'--'.     /         |   :    .'    ;   :    /     ;   |.'     |   |  '   //
+//  |   | ,'    `--'---'  |  ,   /  \   \  /   \   \  /   `--'---'          ;   | .'        \   \ .'      '---'       ;   |.'    //
+//  `----'                 ---`-'    `----'     `----'                      `---'            `---`                    '---'      //
+//                                                                                                                               //
+//                                                                                                                               //
+//                                                                                                                               //
+//                                                                                                                               //
 //                                                                 
 //                                                                                                                             
 // Bsides Badge 2019
@@ -43,10 +44,18 @@
 // * Partition Scheme: Default
 //
 
+// Wifi password input via "secrets.h" (to avoid committing to git).
+// Not specifying password will keep the same one set as before upload.
+#include "secrets.h"
+/* To change wifi password create a new tab "secrets.h" and copy these two lines into it:
+#define SECRETS_SSID "ssid"
+#define SECRETS_PASSWORD "password"
+*/
+
 #include <WiFi.h>  // ESP32 inbuilt library
 #include <SPI.h>  // For TFT, ESP32 inbuilt library
 #include <WiFiUdp.h> // For NTPClient, inbuilt libray
-#include <HTTPClient.h>  //ESP32 inbuilt, for web requests (get speakers list)
+#include <HTTPClient.h>  //ESP32 inbuilt, for web requests (get sessions list)
 
 #define FS_NO_GLOBALS
 #include <FS.h>
@@ -101,11 +110,11 @@ void runDisplayTime();
 void idleDisplay();
 bool idleOnEnable();
 void imagesDisplay();
-void updateSpeakersList();
+void updateSessionsList();
 void checkLoop();
 bool checkSetup();
-bool enableSpeakersDisplay();
-void loopSpeakersDisplay();
+bool enableSessionsDisplay();
+void loopSessionsDisplay();
 // - tasks themselves 
 //     Task tTask(update time ms, update count, address of function);
 Task tWifiCheck(  5 * 1000, TASK_FOREVER, &runWifiCheck);
@@ -113,19 +122,25 @@ Task tTimeSync( 60 * 1000, TASK_FOREVER, &runTimeSync);
 Task tDisplayTime( 1 * 1000, TASK_FOREVER, &runDisplayTime);
 Task tIdleDisplay( 10, TASK_FOREVER, &idleDisplay, NULL, false, &idleOnEnable);
 Task tImagesDisplay( 3000, TASK_FOREVER, &imagesDisplay);
-Task tGetSpeakersList(500, 1, &updateSpeakersList);
-Task tSpeakersDisplay(10, TASK_FOREVER, &loopSpeakersDisplay, NULL, false, &enableSpeakersDisplay);
+Task tGetSessionsList(500, 1, &updateSessionsList);
+Task tSessionsDisplay(10, TASK_FOREVER, &loopSessionsDisplay, NULL, false, &enableSessionsDisplay);
 Task tCheckLoop(1000, TASK_FOREVER, &checkLoop, NULL, false, &checkSetup);
 
+// Prototypes for setup
 void setupWifi();
+void readSessionListFromFlash();
 
 void setup(void) {
-  Serial.begin(115200);
+  // Start and clear screen 
+  // (helps reduce the garbage pattern on TFT at poweron)
+  tft.init();
+  tft.fillScreen(TFT_BLACK);
+  
+  //Serial.begin(115200);
+  Serial.begin(2000000);
   Serial.println("Bsides Badge 2019 starting");
 
   setupButtons(); 
-
-  tft.init();
 
   if (!SPIFFS.begin()) {
     Serial.println("SPIFFS initialisation failed!");
@@ -137,6 +152,7 @@ void setup(void) {
 
   // Start wifi
   setupWifi();
+  readSessionListFromFlash();
 
   // Start scheduler
   runner.init();
@@ -146,8 +162,8 @@ void setup(void) {
   runner.addTask(tDisplayTime);
   runner.addTask(tIdleDisplay);
   runner.addTask(tImagesDisplay);
-  runner.addTask(tGetSpeakersList);
-  runner.addTask(tSpeakersDisplay);
+  runner.addTask(tGetSessionsList);
+  runner.addTask(tSessionsDisplay);
   runner.addTask(tCheckLoop);
   // - start tasks
   tWifiCheck.enable();
@@ -157,7 +173,7 @@ void setup(void) {
   //tImagesDisplay.enable();
   //tImagesDisplay.forceNextIteration();
   //tCheckLoop.enable();
-  tSpeakersDisplay.enable();
+  tSessionsDisplay.enable();
   Serial.println("Initialised scheduler");
 
   // Print badges unique ID (mac address)
@@ -208,7 +224,7 @@ void setupButtons() {
 
 // Task cycle LEDs
 
-// Task display current/next speaker
+// Task display current/next session
 
 // Maintain wifi
 

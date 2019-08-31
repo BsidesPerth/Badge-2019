@@ -1,104 +1,132 @@
-// Show the speakers and sessions
+// Show the sessions
 
-//const char* speakersUrl = "http://m.uploadedit.com/bbtc/1566736690361.txt";
-const char* speakersUrl = "http://m.uploadedit.com/bbtc/1567180145660.txt";
-const char* speakersFilename = "/speakers.txt";
+//const char* sessionsUrl = "http://m.uploadedit.com/bbtc/1566736690361.txt";
+//const char* sessionsUrl = "http://m.uploadedit.com/bbtc/1567180145660.txt";
+const char* sessionsUrl = "http://m.uploadedit.com/bbtc/1567259330389.txt";
+const char* sessionsFilename = "/sessions.txt";
+
+const char* venueNames[2] = {
+  "Westfarmers Lecture Theatre",
+  "Ernst & Young Lecture Theatre"
+};
 
 extern NTPClient timeClient;
 
-struct speaker_t {
-  unsigned long time;
-  String name;
-  String description;
+struct session {
+  int venue;
+  unsigned long datetime;
+  String title;
+  String speaker;
 };
 
-const int speakerListSize = 20;
-speaker_t speakerList[speakerListSize];
-int speakerCount = 0;
-bool speakerListRead = false;
+const int sessionListSize = 20;
+session sessionList[sessionListSize];
+int sessionCount = 0;
 
-// Contact website and download list of speakers. Store list in SPIFFS.
-void updateSpeakersList()
-{
-  if (!speakerListRead) {
-    // Read if there is anything there and don't try again
-    readSpeakerListFromFile();
-    speakerListRead = true;
-  }
-  
-  if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("{SPEAKERS} Get speakers list from website");
-    
-    String speakerListStr;
-    downloadSpeakersList(speakerListStr);
-
-    if (speakerListStr.length() > 0) {
-      writeSpeakerListIfNew(speakerListStr);
-    } else {
-      Serial.println("{SPEAKERS} No list received");
-    }
-  } else {
-    Serial.println("{SPEAKERS} No wifi connection, cannot update");
-  }
-}
-
-void readSpeakerListFromFile() {
-  String diskFile = readFile(speakersFilename);
+void readSessionListFromFlash() {
+  Serial.println("{SESSIONS} parseSessionListFromString");
+  String diskFile = readFile(sessionsFilename);
   if (diskFile.length() > 0) {
-    parseSpeakerListFromString(diskFile);
+    parseSessionListFromString(diskFile);
   }  
 }
 
-void parseSpeakerListFromString(String & speakerListStr) {
-  Serial.println("parseSpeakerListFromString");
-  const char * delim = ",";
-  const char * line = "\n";
+void parseSessionListFromString(String & sessionListStr) {
+  Serial.println("{SESSIONS} parseSessionListFromString");
+  const char * itemSep = ",";
+  const char * lineSep = "\n";
   int start = 0;
   int end = 0;
-  speakerCount = 0;
-  for (int i=0; i<speakerListSize; i++) {
-    start = end;
-    end = speakerListStr.indexOf(delim, start);
-    if (end == -1) break;
-    String timeStr = speakerListStr.substring(start, end);
-    Serial.printf("timeStr (%d) = %s\n", end, timeStr.c_str());
-    speakerList[i].time = makeTime(createElements(timeStr.c_str()));
-    Serial.printf("time = %d\n", speakerList[i].time);
-    end += 1;
+  String item;
+  sessionCount = 0;
+  for (int i=0; i<sessionListSize; i++) {
+    if (!parseNextItem(start, end, sessionListStr, itemSep, item)) break;
+    Serial.printf("{SESSIONS} venue = %s\n", item.c_str());
+    sessionList[i].venue = item.toInt();
 
-    start = end;
-    end = speakerListStr.indexOf(delim, start);
-    if (end == -1) break;
-    String name = speakerListStr.substring(start, end);
-    Serial.printf("name (%d) = %s\n", end, name.c_str());
-    speakerList[i].name = name;
-    end += 1;
-
-    start = end;
-    end = speakerListStr.indexOf(line, start);
-    if (end == -1) break;
-    String description = speakerListStr.substring(start, end);
-    Serial.printf("name (%d) = %s\n", end, description.c_str());
-    speakerList[i].description = description;
-    end += 1;
 //    start = end;
-//    end = speakerListStr.indexOf(delim);
-//    speakersList[i].description = speakerListStr.substring(start, end);
+//    end = sessionListStr.indexOf(delim, start);
+//    if (end == -1) break;
+//    String timeStr = sessionListStr.substring(start, end);
+//    Serial.printf("{SESSIONS} timeStr (%d) = %s\n", end, timeStr.c_str());
+//    sessionList[i].time = makeTime(createElements(timeStr.c_str()));
+//    Serial.printf("{SESSIONS} time = %d\n", (int)sessionList[i].time);
+//    end += 1;
 
-    speakerCount += 1;
+    if (!parseNextItem(start, end, sessionListStr, itemSep, item)) break;
+    Serial.printf("{SESSIONS} datetime = %s\n", item.c_str());
+    sessionList[i].datetime = makeTime(createElements(item.c_str()));
+
+//    start = end;
+//    end = sessionListStr.indexOf(delim, start);
+//    if (end == -1) break;
+//    String name = sessionListStr.substring(start, end);
+//    Serial.printf("{SESSIONS} name (%d) = %s\n", end, name.c_str());
+//    sessionList[i].name = name;
+//    end += 1;
+
+    if (!parseNextItem(start, end, sessionListStr, itemSep, item)) break;
+    Serial.printf("{SESSIONS} title = %s\n", item.c_str());
+    sessionList[i].title = item;
+    
+    if (!parseNextItem(start, end, sessionListStr, lineSep, item)) break;
+    Serial.printf("{SESSIONS} speaker = %s\n", item.c_str());
+    sessionList[i].speaker = item;
+
+//    start = end;
+//    end = sessionListStr.indexOf(line, start);
+//    if (end == -1) break;
+//    String description = sessionListStr.substring(start, end);
+//    Serial.printf("{SESSIONS} description (%d) = %s\n", end, description.c_str());
+//    sessionList[i].description = description;
+//    end += 1;
+
+    sessionCount += 1;
   }  
 }
 
-void downloadSpeakersList(String & speakerListStr) {
+// Look for "search" in "str" and output in "item".
+// Return false if failed to find.
+bool parseNextItem(int& start, int& end, const String& str, const char* search, String& item) {
+  start = end;
+  end = str.indexOf(search, start);
+  if (end == -1) return false;  // No match, exit
+  item = str.substring(start, end);
+  end += 1;
+  return true;
+}
+
+
+// Contact website and download list of sessions. Store list in SPIFFS.
+void updateSessionsList()
+{
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("{SESSIONS} Get sessions list from website");
+    
+    String sessionListStr;
+    downloadSessionsList(sessionListStr);
+
+    if (sessionListStr.length() > 0) {
+      writeSessionListIfNew(sessionListStr);
+    } else {
+      Serial.println("{SESSIONS} No list received");
+    }
+  } else {
+    Serial.println("{SESSIONS} No wifi connection, cannot update");
+  }
+}
+
+
+void downloadSessionsList(String & sessionListStr) {
   // Use HTTPClient to do web requests
   HTTPClient http;
-  Serial.print("[SPEAKERS] Setup HTTP Request: ");
-  Serial.println(speakersUrl);
+  Serial.print("[SESSIONS] Setup HTTP Request: ");
+  Serial.println(sessionsUrl);
   //http.begin("https://www.howsmyssl.com/a/check", ca); //HTTPS
-  http.begin(speakersUrl); //HTTP
+  http.begin(sessionsUrl); //HTTP
 
   Serial.flush();
-  Serial.print("[SPEAKERS] GET...\n");
+  Serial.print("[SESSIONS] GET...\n");
   // start connection and send HTTP header
   int httpCode = http.GET();
 
@@ -106,59 +134,58 @@ void downloadSpeakersList(String & speakerListStr) {
   if (httpCode > 0) {
     // HTTP header has been send and Server response header has been handled
     Serial.flush();
-    Serial.printf("[SPEAKERS] HTTP Response Code: %d\n", httpCode);
+    Serial.printf("[SESSIONS] HTTP Response Code: %d\n", httpCode);
 
     // file found at server
     if (httpCode == HTTP_CODE_OK) {
-      speakerListStr = http.getString();
+      sessionListStr = http.getString();
     }
   } else {
     Serial.flush();
-    Serial.printf("[SPEAKERS] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
+    Serial.printf("[SESSIONS] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
   }
 
   http.end();
 }
 
-void writeSpeakerListIfNew(String & speakerListStr) {
+void writeSessionListIfNew(String & sessionListStr) {
   // ESP32 debug logging was clobbering following log lines
   // flush() clears things up
   Serial.flush();
   
   // Dump response
-  Serial.println("{SPEAKERS) Response text:");
-  Serial.println(speakerListStr);
+  Serial.println("{SESSIONS) Response text:");
+  Serial.println(sessionListStr);
   
   // Check for changes
-  String diskFile = readFile(speakersFilename);
+  String diskFile = readFile(sessionsFilename);
   if (diskFile.length() > 0) {
-    Serial.println("{SPEAKERS) Currently on badge:");
+    Serial.println("{SESSIONS) Currently on badge:");
     Serial.println(diskFile);
   }
-  if (!diskFile.equals(speakerListStr)) {
+  if (!diskFile.equals(sessionListStr)) {
     // File changed so save to disk
-    Serial.println("{SPEAKERS} Writing list to file");
-    //Serial.println("{SPEAKERS} NOT");
-    writeFile(speakersFilename, speakerListStr.c_str());
+    Serial.println("{SESSIONS} Writing list to file");
+    writeFile(sessionsFilename, sessionListStr.c_str());
 
     // List new so parse it into memory
-    Serial.println("{SPEAKERS} Parsing into memory");
-    parseSpeakerListFromString(speakerListStr);
+    Serial.println("{SESSIONS} Parsing into memory");
+    parseSessionListFromString(sessionListStr);
   } else {
-    Serial.println("{SPEAKERS} No change to speakers file");
+    Serial.println("{SESSIONS} No change to sessions file");
   }
   
 }
 
-// ============== Functions to display speakers list (programme) =============
+// ============== Functions to display sessions list (session times) =============
 
 
-bool enableSpeakersDisplay() {
-  Serial.println("Enable Speakers Display");
+bool enableSessionsDisplay() {
+  Serial.println("{SESSIONS} Enable Sessions Display");
   tft.fillScreen(TFT_NAVY);
   tft.setTextSize(1);
   tft.setTextColor(TFT_WHITE, TFT_WHITE);
-  tft.drawCentreString("Programme", 120, 0, 4);
+  tft.drawCentreString("Session Times", 120, 0, 4);
 
   Serial.println("string converted to tmElements.");
   Serial.println("format is yyyy-mm-dd hh:mm:ss");
@@ -177,14 +204,21 @@ bool enableSpeakersDisplay() {
   return true;
 }
 
-void disableSpeakersDisplay() {
+void disableSessionsDisplay() {
   
 }
 
-void loopSpeakersDisplay() {
-  //String diskFile = readFile(speakersFilename);
-  //if (diskFile.length() > 0) {
-  //Serial.println("Loop speaker display");
-  //auto t = timeClient.getEpochTime();
-  //Serial.printf("epochTime=%d, year=%d\n", t, year(t));
+void loopSessionsDisplay() {
+//  // Now print text on top of the graphics
+//  img.setTextSize(1);           // Font size scaling is x1
+//  img.setTextFont(4);           // Font 4 selected
+//  img.setTextColor(TFT_BLACK);  // Black text, no background colour
+//  img.setTextWrap(false);       // Turn of wrap so we can print past end of sprite
+//
+//  // Need to print twice so text appears to wrap around at left and right edges
+//  img.setCursor(xpos, 2);  // Print text at xpos
+//  img.print(msg);
+//
+//  img.setCursor(xpos - IWIDTH, 2); // Print text at xpos - sprite width
+//  img.print(msg);
 }

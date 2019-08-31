@@ -1,6 +1,7 @@
 //Couldn't seem to get the offical time library so important bits are here
 //https://github.com/PaulStoffregen/Time
-
+#ifndef TIMELIB_CUSTOM_H
+#define TIMELIB_CUSTOM_H
 /*
   time.h - low level time and date functions
 */
@@ -146,3 +147,5 @@ time_t makeTime(const tmElements_t &tm);  // convert time elements into time_t
 } // extern "C++"
 #endif // __cplusplus
 #endif /* _Time_h */
+
+#endif // TIMELIB_CUSTOM_H

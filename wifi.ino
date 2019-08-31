@@ -35,10 +35,14 @@
   25 SYSTEM_EVENT_MAX
 */
 
-// wifi passwords in secrets.h
-#include "secrets.h"
-//const char* ssid     = "ssid";
-//const char* password = "password";
+#ifdef SECRETS_SSID
+  const char* ssid     = SECRETS_SSID;
+  const char* password = SECRETS_PASSWORD;
+#else
+  // Use existing password when strings blank
+  const char* ssid = "";
+  const char* password = "";
+#endif
 
 
 void WiFiEvent(WiFiEvent_t event)
@@ -122,6 +126,9 @@ void WiFiEvent(WiFiEvent_t event)
     case SYSTEM_EVENT_ETH_GOT_IP:
       Serial.println("Obtained IP address");
       break;
+    default:
+      Serial.println("Unknown event");
+      break;
   }
 }
 
@@ -133,8 +140,8 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
   // Kick NTP
   tTimeSync.forceNextIteration();
 
-  // Get speaker updates from server
-  tGetSpeakersList.enable();
+  // Get session updates from server
+  tGetSessionsList.enable();
 }
 
 void setupWifi()
@@ -194,4 +201,5 @@ boolean reconnect()
     
      Serial.println("Connected");
   }
+  return true;
 }
