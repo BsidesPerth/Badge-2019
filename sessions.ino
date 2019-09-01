@@ -3,6 +3,7 @@
 //const char* sessionsUrl = "http://m.uploadedit.com/bbtc/1566736690361.txt";
 //const char* sessionsUrl = "http://m.uploadedit.com/bbtc/1567180145660.txt";
 const char* sessionsUrl = "http://m.uploadedit.com/bbtc/1567259330389.txt";
+//const char* sessionsUrl = "http://m.uploadedit.com/bbtc/bad.txt";
 const char* sessionsFilename = "/sessions.txt";
 
 const char* venueNames[2] = {
@@ -14,7 +15,7 @@ extern NTPClient timeClient;
 
 struct session {
   int venue;
-  unsigned long datetime;
+  time_t datetime;
   String title;
   String speaker;
 };
@@ -44,26 +45,9 @@ void parseSessionListFromString(String & sessionListStr) {
     Serial.printf("{SESSIONS} venue = %s\n", item.c_str());
     sessionList[i].venue = item.toInt();
 
-//    start = end;
-//    end = sessionListStr.indexOf(delim, start);
-//    if (end == -1) break;
-//    String timeStr = sessionListStr.substring(start, end);
-//    Serial.printf("{SESSIONS} timeStr (%d) = %s\n", end, timeStr.c_str());
-//    sessionList[i].time = makeTime(createElements(timeStr.c_str()));
-//    Serial.printf("{SESSIONS} time = %d\n", (int)sessionList[i].time);
-//    end += 1;
-
     if (!parseNextItem(start, end, sessionListStr, itemSep, item)) break;
     Serial.printf("{SESSIONS} datetime = %s\n", item.c_str());
-    sessionList[i].datetime = makeTime(createElements(item.c_str()));
-
-//    start = end;
-//    end = sessionListStr.indexOf(delim, start);
-//    if (end == -1) break;
-//    String name = sessionListStr.substring(start, end);
-//    Serial.printf("{SESSIONS} name (%d) = %s\n", end, name.c_str());
-//    sessionList[i].name = name;
-//    end += 1;
+    sessionList[i].datetime = strToTime(item);
 
     if (!parseNextItem(start, end, sessionListStr, itemSep, item)) break;
     Serial.printf("{SESSIONS} title = %s\n", item.c_str());
@@ -72,14 +56,6 @@ void parseSessionListFromString(String & sessionListStr) {
     if (!parseNextItem(start, end, sessionListStr, lineSep, item)) break;
     Serial.printf("{SESSIONS} speaker = %s\n", item.c_str());
     sessionList[i].speaker = item;
-
-//    start = end;
-//    end = sessionListStr.indexOf(line, start);
-//    if (end == -1) break;
-//    String description = sessionListStr.substring(start, end);
-//    Serial.printf("{SESSIONS} description (%d) = %s\n", end, description.c_str());
-//    sessionList[i].description = description;
-//    end += 1;
 
     sessionCount += 1;
   }  
@@ -171,6 +147,12 @@ void writeSessionListIfNew(String & sessionListStr) {
     // List new so parse it into memory
     Serial.println("{SESSIONS} Parsing into memory");
     parseSessionListFromString(sessionListStr);
+
+    // Refresh display if currently displaying session times
+    if (tSessionsDisplay.isEnabled()) {
+      Serial.println("{SESSIONS} Refresh screen");
+      enableSessionsDisplay();
+    }
   } else {
     Serial.println("{SESSIONS} No change to sessions file");
   }
@@ -179,28 +161,12 @@ void writeSessionListIfNew(String & sessionListStr) {
 
 // ============== Functions to display sessions list (session times) =============
 
-
 bool enableSessionsDisplay() {
   Serial.println("{SESSIONS} Enable Sessions Display");
   tft.fillScreen(TFT_NAVY);
   tft.setTextSize(1);
-  tft.setTextColor(TFT_WHITE, TFT_WHITE);
-  tft.drawCentreString("Session Times", 120, 0, 4);
-
-  Serial.println("string converted to tmElements.");
-  Serial.println("format is yyyy-mm-dd hh:mm:ss");
-  char firstDateTime[] = {"2017-03-26 10:30:15"};
-  char secondDateTime[] = {"2017-03-27 10:30:15"};
-  Serial.println(firstDateTime);
-  Serial.println(secondDateTime);
-  auto myTime = createElements(firstDateTime);
-  unsigned long firstTime = makeTime(myTime);
-  myTime = createElements(secondDateTime);
-  unsigned long secondTime = makeTime(myTime);
-  Serial.println("Time Difference in Minutes");
-  Serial.println((secondTime - firstTime)/60);
-
-  
+  tft.setTextColor(TFT_YELLOW, TFT_YELLOW);
+  tft.drawCentreString("Session Times", 115, 3, 4);
   return true;
 }
 
@@ -208,8 +174,127 @@ void disableSessionsDisplay() {
   
 }
 
+// Currently displayed session
+int sessDisp = -1;
+
 void loopSessionsDisplay() {
-//  // Now print text on top of the graphics
+  Serial.println("{SESSIONS} Loop Sessions Display");
+  if (sessionCount == 0) {
+    // Report no sessions
+    img.setColorDepth(1);
+    img.createSprite(240, 60);
+    img.fillSprite(TFT_BLACK);
+    img.setTextColor(TFT_WHITE);
+    img.drawCentreString("No Sessions", 120, 0, 4);
+    img.drawCentreString("Loaded", 120, 30, 4);
+    // Specify the colours of the ON and OFF pixels
+    tft.setBitmapColor(TFT_RED, TFT_TRANSPARENT);
+    img.pushSprite(0, 80, TFT_TRANSPARENT);
+    img.deleteSprite();
+  } else {
+    if (sessDisp == -1) {
+      // Display welcome page
+      img.setColorDepth(1);
+      img.setTextColor(TFT_WHITE);
+
+      // - help text
+      const int offset = 5;
+      img.createSprite(230, 130);
+      img.fillSprite(TFT_BLACK);
+      img.setTextFont(2);
+      img.println("Use        to browse sessions");
+      img.println();
+      img.println("Use        to select a room");
+      img.println();
+      img.println("Use A (SW8) to mark a talk and");
+      img.print("badge will remind you");
+      // Specify the colours of the ON and OFF pixels
+      tft.setBitmapColor(TFT_WHITE, TFT_TRANSPARENT);
+      img.pushSprite(5, 40+offset, TFT_TRANSPARENT);
+      img.deleteSprite();
+
+      // - arrows
+      drawArrow(38, 48+offset, 15, 270, TFT_WHITE);
+      drawArrow(60, 48+offset, 15, 90, TFT_WHITE);
+
+      drawArrow(38, 80+offset, 15, 0, TFT_WHITE);
+      drawArrow(60, 80+offset, 15, 180, TFT_WHITE);
+
+      drawArrow(220, 15, 20, 90, TFT_YELLOW);
+      
+      // - datetime label
+      img.createSprite(230, 30);
+      img.setColorDepth(1);
+      img.fillSprite(TFT_BLACK);
+      img.drawString("Current Time:", 0, 0, 4);
+      // Specify the colours of the ON and OFF pixels
+      tft.setBitmapColor(TFT_GREENYELLOW, TFT_TRANSPARENT);
+      img.pushSprite(3, 185, TFT_TRANSPARENT);
+      img.deleteSprite();
+
+      // - datetime
+      img.createSprite(230, 25);
+      img.fillSprite(TFT_BLACK);
+      time_t t = timeClient.getEpochTime();
+      img.drawString(timeToStr(t), 0, 0, 4);
+      // Specify the colours of the ON and OFF pixels
+      tft.setBitmapColor(TFT_GREENYELLOW, TFT_NAVY);
+      img.pushSprite(3, 215);
+      img.deleteSprite();
+            
+    } else {
+      // Display the selected session
+
+      // - datetime
+      img.setColorDepth(1);
+      img.createSprite(240, 30);
+      img.fillSprite(TFT_BLACK);
+      img.setTextColor(TFT_WHITE);
+      img.drawString(timeToStr(sessionList[sessDisp].datetime), 0, 0, 4);
+      // Specify the colours of the ON and OFF pixels
+      tft.setBitmapColor(TFT_GREENYELLOW, TFT_TRANSPARENT);
+      img.pushSprite(0, 35, TFT_TRANSPARENT);
+      img.deleteSprite();
+      
+      // - title
+      img.setColorDepth(1);
+      img.createSprite(240, 60);
+      img.fillSprite(TFT_BLACK);
+      img.setTextColor(TFT_WHITE);
+      img.setTextWrap(true);
+      img.drawString(sessionList[sessDisp].title, 0, 0, 4);
+      // Specify the colours of the ON and OFF pixels
+      tft.setBitmapColor(TFT_WHITE, TFT_TRANSPARENT);
+      img.pushSprite(0, 70, TFT_TRANSPARENT);
+      img.deleteSprite();
+      
+      // - speaker
+      img.setColorDepth(1);
+      img.createSprite(240, 30);
+      img.fillSprite(TFT_BLACK);
+      img.setTextColor(TFT_WHITE);
+      img.drawString(sessionList[sessDisp].speaker, 0, 0, 4);
+      // Specify the colours of the ON and OFF pixels
+      tft.setBitmapColor(TFT_GREENYELLOW, TFT_TRANSPARENT);
+      img.pushSprite(0, 140, TFT_TRANSPARENT);
+      img.deleteSprite();
+      
+      // - venue
+      img.setColorDepth(1);
+      img.createSprite(240, 60);
+      img.fillSprite(TFT_BLACK);
+      img.setTextColor(TFT_WHITE);
+      img.setTextWrap(true);
+      img.drawString(venueNames[sessionList[sessDisp].venue - 1], 0, 0, 4);
+      // Specify the colours of the ON and OFF pixels
+      tft.setBitmapColor(TFT_CYAN, TFT_TRANSPARENT);
+      img.pushSprite(0, 175, TFT_TRANSPARENT);
+      img.deleteSprite();
+    }
+    
+    
+  }
+  
 //  img.setTextSize(1);           // Font size scaling is x1
 //  img.setTextFont(4);           // Font 4 selected
 //  img.setTextColor(TFT_BLACK);  // Black text, no background colour
@@ -221,4 +306,30 @@ void loopSessionsDisplay() {
 //
 //  img.setCursor(xpos - IWIDTH, 2); // Print text at xpos - sprite width
 //  img.print(msg);
+}
+
+// Arrow pointed up rotated by rot
+void drawArrow(int x0, int y0, int len, int rot, int col) {
+  img.setColorDepth(8);
+  const int width = len/2;
+  img.createSprite(width, len);
+  img.fillSprite(TFT_TRANSPARENT);
+  //img.setRotation(rot);
+
+  //img.drawLine(0, 0, img.width(), img.height(), TFT_WHITE);
+  
+  img.drawLine(width/2, 0, width/2, len, col);
+  img.drawLine(width/2, 0, 0, len/2, col);
+  img.drawLine(width/2, 0, width-1, len/2, col);
+
+  //img.drawRect(0, 0, img.width(), img.height(), TFT_WHITE);
+
+  //img.setRotation(0);
+
+  //tft.setBitmapColor(col, TFT_TRANSPARENT);
+  //img.pushSprite(x0, y0, TFT_TRANSPARENT);
+  tft.setPivot(x0, y0);
+  img.setPivot(img.width()/2, img.height()/2);
+  img.pushRotated(rot, TFT_TRANSPARENT);
+  img.deleteSprite();
 }

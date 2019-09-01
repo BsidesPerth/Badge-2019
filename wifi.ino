@@ -154,7 +154,7 @@ void setupWifi()
   // Examples of different ways to register wifi events
   WiFi.onEvent(WiFiEvent);
   WiFi.onEvent(WiFiGotIP, WiFiEvent_t::SYSTEM_EVENT_STA_GOT_IP);
-  WiFiEventId_t eventID = WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
+  WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
     Serial.print("WiFi lost connection. Reason: ");
     Serial.println(info.disconnected.reason);
   }, WiFiEvent_t::SYSTEM_EVENT_STA_DISCONNECTED);
@@ -170,6 +170,7 @@ void setupWifi()
 // Reconnect scheme - justoke 
 long lastReconnectAttempt = 0;
 
+// TODO: Overhaul for async
 void runWifiCheck()
 {
   if (!WiFi.isConnected()) {
@@ -199,7 +200,7 @@ boolean reconnect()
         return false;
     }
     
-     Serial.println("Connected");
+    Serial.println("Connected");
   }
   return true;
 }

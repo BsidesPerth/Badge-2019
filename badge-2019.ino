@@ -123,7 +123,7 @@ Task tDisplayTime( 1 * 1000, TASK_FOREVER, &runDisplayTime);
 Task tIdleDisplay( 10, TASK_FOREVER, &idleDisplay, NULL, false, &idleOnEnable);
 Task tImagesDisplay( 3000, TASK_FOREVER, &imagesDisplay);
 Task tGetSessionsList(500, 1, &updateSessionsList);
-Task tSessionsDisplay(10, TASK_FOREVER, &loopSessionsDisplay, NULL, false, &enableSessionsDisplay);
+Task tSessionsDisplay(500, TASK_FOREVER, &loopSessionsDisplay, NULL, false, &enableSessionsDisplay);
 Task tCheckLoop(1000, TASK_FOREVER, &checkLoop, NULL, false, &checkSetup);
 
 // Prototypes for setup

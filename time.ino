@@ -102,10 +102,12 @@ void runDisplayTime() {
 // ========= TIME LIBRARY THINGS ==========
 
 // Inspired by https://forum.arduino.cc/index.php?topic=465881.0
-tmElements_t createElements(const char *str)
+time_t strToTime(const String& string)
 {
+  const char *str = string.c_str();
   tmElements_t tm;
-  int y, m, d, H, M, S;
+  int y=0, m=0, d=0, H=0, M=0, S=0;
+  // Read as many elements as exist. Returns number of elements read.
   sscanf(str, "%d-%d-%d %d:%d:%d", &y, &m, &d, &H, &M, &S);
   tm.Year = CalendarYrToTm(y);
   tm.Month = m;
@@ -113,7 +115,19 @@ tmElements_t createElements(const char *str)
   tm.Hour = H;
   tm.Minute = M;
   tm.Second = S;
-  return tm;
+  return makeTime(tm);
+}
+
+String timeToStr(time_t& time) {
+  tmElements_t tm;
+  breakTime(time, tm);
+  String str = String(tmYearToCalendar(tm.Year)) + "-" + zeroPad(tm.Month) + "-" + zeroPad(tm.Day)
+               + " " + zeroPad(tm.Hour) + ":" + zeroPad(tm.Minute);
+  return str;
+}
+
+String zeroPad(uint8_t val) {
+  return val < 10 ? "0" + String(val) : String(val);
 }
 
 // https://github.com/PaulStoffregen/Time/blob/master/Time.cpp
