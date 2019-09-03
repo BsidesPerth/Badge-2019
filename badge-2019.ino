@@ -67,25 +67,49 @@
 // Libraries from Arduino Library manager (links to help point to correct one)
 #include <TaskScheduler.h>  // https://github.com/arkhipenko/TaskScheduler
 #include <NTPClient.h>  // https://github.com/arduino-libraries/NTPClient
+#define FASTLED_INTERNAL // to suppress pragma messages during build
 #include <FastLED.h>  // https://github.com/FastLED/FastLED
 #include <JPEGDecoder.h>  // https://github.com/Bodmer/JPEGDecoder
+#include <Bounce2.h>  //https://github.com/thomasfredericks/Bounce2
 
 #include "TFT_eSPI/TFT_eSPI.h"   // Local copy of TFT_eSPI: https://github.com/Bodmer/TFT_eSPI
-#include "timelib.h"
+#include "timelib.h"  // local copy since ESP32 seems to miss <time.h>
 
 // TFT Screen
 TFT_eSPI tft = TFT_eSPI();  // Create screen object 240x240
 TFT_eSprite img = TFT_eSprite(&tft);  // Sprite for in memory rendering
 
 // Buttons
-const int pinSw1 = 0;  //Up
-//const int pinSw2 = 0; // ESP_EN -- reset pin on back
-const int pinSw3 = 34; //Right
-const int pinSw4 = 36; //Down
-const int pinSw5 = 35; //Left
-const int pinSw6 = 2;  //Top
-const int pinSw7 = 39; //Mid
-const int pinSw8 = 33; //Bottom
+#define DEBOUNCE_INTERVAL 25
+#define NUMBER_BUTTONS 7
+enum EBUTTONS {
+  BUTTON_UP,
+  BUTTON_RIGHT,
+  BUTTON_DOWN,
+  BUTTON_LEFT,
+  BUTTON_TOP,
+  BUTTON_MID,
+  BUTTON_BOTTOM
+};
+
+struct buttons_t {
+  const int pin;  // pin number
+  const int mode; // INPUT, INPUT_PULLUP, etc
+  const bool offState; // logic level when not pressed
+  Bounce debouncer;  // manages debouncing logic
+  void (*callback)(EBUTTONS button, bool pressed);  // called when button pressed or released
+};
+
+buttons_t buttons[NUMBER_BUTTONS] = {
+  {0,  INPUT, HIGH, Bounce(), nullptr},  // SW1 = BUTTON_UP
+  {34, INPUT, HIGH, Bounce(), nullptr},  // SW3 = BUTTON_RIGHT
+  {36, INPUT, HIGH, Bounce(), nullptr},  // SW4 = BUTTON_DOWN
+  {35, INPUT, HIGH, Bounce(), nullptr},  // SW5 = BUTTON_LEFT
+  {2,  INPUT, HIGH, Bounce(), nullptr},  // SW6 = BUTTON_TOP
+  {39, INPUT, HIGH, Bounce(), nullptr},  // SW7 = BUTTON_MID
+  {33, INPUT, HIGH, Bounce(), nullptr}   // SW8 = BUTTON_BOTTOM
+};
+
 
 // Charging indication
 const int pinChargeInd = 32;
@@ -115,6 +139,7 @@ void checkLoop();
 bool checkSetup();
 bool enableSessionsDisplay();
 void loopSessionsDisplay();
+void updateButtons();
 // - tasks themselves 
 //     Task tTask(update time ms, update count, address of function);
 Task tWifiCheck(  5 * 1000, TASK_FOREVER, &runWifiCheck);
@@ -125,6 +150,7 @@ Task tImagesDisplay( 3000, TASK_FOREVER, &imagesDisplay);
 Task tGetSessionsList(500, 1, &updateSessionsList);
 Task tSessionsDisplay(1000, TASK_FOREVER, &loopSessionsDisplay, NULL, false, &enableSessionsDisplay);
 Task tCheckLoop(1000, TASK_FOREVER, &checkLoop, NULL, false, &checkSetup);
+Task tUpdateButtons(1, TASK_FOREVER, &updateButtons);
 
 // Prototypes for setup
 void setupWifi();
@@ -147,16 +173,16 @@ void setup(void) {
     while (1) yield(); // Stay here twiddling thumbs waiting
   }
 
-  //imagesSetup();
-  //setupSpriteTest();
-
-  // Start wifi
   setupWifi();
   readSessionListFromFlash();
+  //imagesSetup();
+
+  //setupSpriteTest();
 
   // Start scheduler
   runner.init();
   // - add tasks
+  runner.addTask(tUpdateButtons);
   runner.addTask(tWifiCheck);
   runner.addTask(tTimeSync);
   runner.addTask(tDisplayTime);
@@ -166,14 +192,15 @@ void setup(void) {
   runner.addTask(tSessionsDisplay);
   runner.addTask(tCheckLoop);
   // - start tasks
+  tUpdateButtons.enable();
   tWifiCheck.enable();
   tTimeSync.enable();
   //tDisplayTime.enable();
   //tIdleDisplay.enable();
   //tImagesDisplay.enable();
   //tImagesDisplay.forceNextIteration();
-  //tCheckLoop.enable();
-  tSessionsDisplay.enable();
+  tCheckLoop.enable();
+  //tSessionsDisplay.enable();
   Serial.println("Initialised scheduler");
 
   // Print badges unique ID (mac address)
@@ -213,14 +240,35 @@ void demoScreen() {
 }
 
 void setupButtons() {
-  pinMode(pinSw1, INPUT);
-  pinMode(pinSw3, INPUT);
-  pinMode(pinSw4, INPUT);
-  pinMode(pinSw5, INPUT);
-  pinMode(pinSw6, INPUT);
-  pinMode(pinSw7, INPUT);
-  pinMode(pinSw8, INPUT);
+  for (int i=0; i<NUMBER_BUTTONS; i++) {
+    buttons[i].debouncer.attach(buttons[i].pin, buttons[i].mode);
+    buttons[i].debouncer.interval(DEBOUNCE_INTERVAL);
+  }
 }
+
+void updateButtons() {
+  for (int i=0; i<NUMBER_BUTTONS; i++) {
+    buttons[i].debouncer.update();
+
+    if (buttons[i].callback) {
+      // Fire the callback if we have a genuine button state change.
+      // Debouncer filters the noise for us.
+      if (buttons[i].debouncer.rose()) {
+        // Went from low to high
+        //  - if offState=LOW(false) then thats pressing it (pressed = true)
+        //  - if offState=HIGH(true) then thats releasing it (pressed = false)
+        buttons[i].callback(static_cast<EBUTTONS>(i), !buttons[i].offState);
+      } else if (buttons[i].debouncer.fell()) {
+        // Went from high to low
+        //  - if offState=LOW(false) then thats releasing it (pressed = false)
+        //  - if offState=HIGH(true) then thats pressing it (pressed = true)
+        buttons[i].callback(static_cast<EBUTTONS>(i), buttons[i].offState);
+      }
+    }
+  }
+}
+
+//TODO: Call debouncer.update every millisecond
 
 // Task cycle LEDs
 
