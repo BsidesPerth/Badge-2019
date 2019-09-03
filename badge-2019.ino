@@ -199,8 +199,8 @@ void setup(void) {
   //tIdleDisplay.enable();
   //tImagesDisplay.enable();
   //tImagesDisplay.forceNextIteration();
-  tCheckLoop.enable();
-  //tSessionsDisplay.enable();
+  //tCheckLoop.enable();
+  tSessionsDisplay.enable();
   Serial.println("Initialised scheduler");
 
   // Print badges unique ID (mac address)

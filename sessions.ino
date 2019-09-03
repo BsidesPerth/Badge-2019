@@ -15,16 +15,25 @@ const char* venueNames[4] = {
 
 extern NTPClient timeClient;
 
-struct session {
+struct Session_t {
   int venue;
   time_t datetime;
   String title;
   String speaker;
 };
+struct SessionPairs_t {
+  Session_t *first;
+  Session_t *second;
+};
 
-const int sessionListSize = 20;
-session sessionList[sessionListSize];
+const int sessionListSize = 40;
+Session_t sessionList[sessionListSize];
 int sessionCount = 0;
+SessionPairs_t sessionPairList[sessionListSize];
+int sessionPairCount = 0;   
+
+//prototypes
+void drawSessionOverview(Session_t * session, int y);
 
 void readSessionListFromFlash() {
   Serial.println("{SESSIONS} parseSessionListFromString");
@@ -42,6 +51,9 @@ void parseSessionListFromString(String & sessionListStr) {
   int end = 0;
   String item;
   sessionCount = 0;
+
+  bool firstOfPair = true;
+  
   for (int i=0; i<sessionListSize; i++) {
     if (!parseNextItem(start, end, sessionListStr, itemSep, item)) break;
     Serial.printf("{SESSIONS} venue = %s\n", item.c_str());
@@ -51,6 +63,40 @@ void parseSessionListFromString(String & sessionListStr) {
     Serial.printf("{SESSIONS} datetime = %s\n", item.c_str());
     sessionList[i].datetime = strToTime(item);
 
+    // Pair up those events with matching datetime
+    if (firstOfPair) {
+      // This i is a first, next one is second
+      firstOfPair = false;
+      // Store first in fresh slot in pairs list
+      // Put it in pairs list. If no match then this becomes a single.
+      SessionPairs_t pair;
+      pair.first = &sessionList[i];
+      pair.second = nullptr;
+      sessionPairList[sessionPairCount] = pair;
+      sessionPairCount += 1;      
+    } else {
+      // This i is a second so lets see if time matches the first
+      if (sessionList[i].datetime == sessionPairList[sessionPairCount-1].first->datetime) {
+        // We have a matching pair, save the second
+        sessionPairList[sessionPairCount-1].second = &sessionList[i];        
+        // The next one will be a first
+        firstOfPair = true;
+      } else {
+        // They don't match. Make this a new first
+        SessionPairs_t pair;
+        pair.first = &sessionList[i];
+        pair.second = nullptr;
+        sessionPairList[sessionPairCount] = pair;
+        sessionPairCount += 1;      
+        // Next one is a candidate second
+        firstOfPair = false;
+      }
+    }
+
+    // Increment count here since we have put session in pairs list so it will be used.
+    // A parsing error below will mean blank entries.
+    sessionCount += 1;
+
     if (!parseNextItem(start, end, sessionListStr, itemSep, item)) break;
     Serial.printf("{SESSIONS} title = %s\n", item.c_str());
     sessionList[i].title = item;
@@ -59,7 +105,6 @@ void parseSessionListFromString(String & sessionListStr) {
     Serial.printf("{SESSIONS} speaker = %s\n", item.c_str());
     sessionList[i].speaker = item;
 
-    sessionCount += 1;
   }  
 }
 
@@ -165,7 +210,7 @@ void writeSessionListIfNew(String & sessionListStr) {
 // ============== Functions to display sessions list (session times) ============= //
 
 // Currently displayed session
-int sessDisp = 2;
+int sessPairDisp = 2;
 bool sessionDisplayNeedsRefresh = true;
 
 bool enableSessionsDisplay() {
@@ -176,7 +221,32 @@ bool enableSessionsDisplay() {
   img.setColorDepth(1);
   img.setTextWrap(false);
   sessionDisplayNeedsRefresh = true;
+
+  for (int i=0; i<NUMBER_BUTTONS; i++) {
+    buttons[i].callback = sessionButtonHandler;
+  }  
+
   return true;
+}
+
+void sessionButtonHandler(EBUTTONS button, bool pressed) {
+  if (pressed && (button == BUTTON_RIGHT)) {
+    // Next session
+    sessPairDisp += 1;
+    if (sessPairDisp >= sessionPairCount) {
+      sessPairDisp = sessionPairCount - 1;
+    }
+  } else if (pressed && (button == BUTTON_LEFT)) {
+    // Prev session
+    sessPairDisp -= 1;
+    if (sessPairDisp < 0) {
+      sessPairDisp = 0;
+    }
+  }
+  
+  // Event driven display update
+  sessionDisplayNeedsRefresh = true;
+  loopSessionsDisplay();
 }
 
 void disableSessionsDisplay() {
@@ -185,14 +255,15 @@ void disableSessionsDisplay() {
 
 void loopSessionsDisplay() {
   if (sessionDisplayNeedsRefresh) {
+    tft.fillScreen(TFT_NAVY);
     sessionDisplayNeedsRefresh = false;
     
     if (sessionCount == 0) {
       // Report no sessions
       sessionsDisplayNone();
     } else {
-      Serial.printf("{SESSIONS} Loop Sessions Display: Refresh %d", sessDisp);
-      if (sessDisp == -1) {
+      Serial.printf("{SESSIONS} Loop Sessions Display: Refresh %d", sessPairDisp);
+      if (sessPairDisp == -1) {
         // Display welcome page
         sessionsDisplayWelcome();
         // - refresh again for time update
@@ -277,7 +348,7 @@ void sessionDisplayParent() {
   img.createSprite(240, 25);
   img.fillSprite(TFT_BLACK);
   img.setTextColor(TFT_WHITE);
-  img.drawCentreString(timeToStr(sessionList[sessDisp].datetime), 120, 0, 4);
+  img.drawCentreString(timeToStr(sessionPairList[sessPairDisp].first->datetime), 120, 0, 4);
   tft.setBitmapColor(TFT_YELLOW, TFT_TRANSPARENT);
   img.pushSprite(0, 3, TFT_TRANSPARENT);
   img.deleteSprite();
@@ -285,16 +356,15 @@ void sessionDisplayParent() {
   drawArrow(10,   13, 20, 270, TFT_YELLOW);
   drawArrow(230, 13, 20, 90,  TFT_YELLOW);
   
-  drawSessionOverview(sessDisp, 25);
+  drawSessionOverview(sessionPairList[sessPairDisp].first, 25);
 
-  drawSessionOverview(sessDisp+1, 108+25);
-
-  // TODO: If next session matches then display this too. 
-  // Remeber displaying two for button navigation.
+  if (sessionPairList[sessPairDisp].second) {
+    drawSessionOverview(sessionPairList[sessPairDisp].second, 108+25);
+  }
 }
 
 // Draw individual session
-void drawSessionOverview(int sessionIdx, int y) {
+void drawSessionOverview(Session_t * session, int y) {
   // 105 high is budget
 
   // Divider line that venue is drawn on
@@ -302,7 +372,7 @@ void drawSessionOverview(int sessionIdx, int y) {
   tft.drawFastHLine(0, y+0, 240, TFT_YELLOW);
 
   // Venue
-  String venueName = venueNames[sessionList[sessionIdx].venue - 1];
+  String venueName = venueNames[session->venue - 1];
   img.createSprite(tft.textWidth(venueName, 2) + 6, tft.fontHeight(2));
   img.fillSprite(TFT_BLACK);
   img.drawCentreString(venueName, img.width()/2, 0, 2);
@@ -318,7 +388,7 @@ void drawSessionOverview(int sessionIdx, int y) {
   img.setCursor(0, 0);
   //img.setTextFont(2);
   //img.print(multilineText);
-  printMultilineWrapAtSpaces(sessionList[sessionIdx].title, 4, 2, 240);
+  printMultilineWrapAtSpaces(session->title, 4, 2, 240);
   tft.setBitmapColor(TFT_WHITE, TFT_TRANSPARENT);
   img.pushSprite(0, y+25, TFT_TRANSPARENT);
   img.deleteSprite();
@@ -326,7 +396,7 @@ void drawSessionOverview(int sessionIdx, int y) {
   // Speaker name
   img.createSprite(240, tft.fontHeight(2));
   img.fillSprite(TFT_BLACK);
-  img.drawString(sessionList[sessionIdx].speaker, 0, 0, 2);
+  img.drawString(session->speaker, 0, 0, 2);
   tft.setBitmapColor(TFT_GREENYELLOW, TFT_TRANSPARENT);
   img.pushSprite(0, y+25+h+3, TFT_TRANSPARENT);
   img.deleteSprite();
