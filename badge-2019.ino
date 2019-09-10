@@ -105,7 +105,7 @@ buttons_t buttons[NUMBER_BUTTONS] = {
   {34, INPUT, HIGH, Bounce(), nullptr},  // SW3 = BUTTON_RIGHT
   {36, INPUT, HIGH, Bounce(), nullptr},  // SW4 = BUTTON_DOWN
   {35, INPUT, HIGH, Bounce(), nullptr},  // SW5 = BUTTON_LEFT
-  {2,  INPUT, HIGH, Bounce(), nullptr},  // SW6 = BUTTON_TOP
+  {16, INPUT_PULLUP, LOW, Bounce(), nullptr},  // SW6 = BUTTON_TOP (was pin 2)
   {39, INPUT, HIGH, Bounce(), nullptr},  // SW7 = BUTTON_MID
   {33, INPUT, HIGH, Bounce(), nullptr}   // SW8 = BUTTON_BOTTOM
 };
@@ -121,9 +121,22 @@ const int pinOutB = 19;
 const int pinOutH = 18;
 const int pinOutV = 5;
 
+// IR
+const int pinIRtx = 13;
+const int pinIRrx = 15;
+
 // Addressable LEDs (APA102s)
 const int pinLedsData = 14;
-const int pinLedsClock = 12;
+const int pinLedsClock = 2;
+
+// FastLED
+#define NUM_LEDS    8
+#define LED_TYPE    APA102
+#define COLOR_ORDER GRB
+#define BRIGHTNESS          96
+CRGB leds[NUM_LEDS];
+
+
 
 // Task Scheduler
 Scheduler runner;
@@ -140,6 +153,7 @@ bool checkSetup();
 bool enableSessionsDisplay();
 void loopSessionsDisplay();
 void updateButtons();
+void updateFastLED();
 // - tasks themselves 
 //     Task tTask(update time ms, update count, address of function);
 Task tWifiCheck(  5 * 1000, TASK_FOREVER, &runWifiCheck);
@@ -151,6 +165,7 @@ Task tGetSessionsList(500, 1, &updateSessionsList);
 Task tSessionsDisplay(1000, TASK_FOREVER, &loopSessionsDisplay, NULL, false, &enableSessionsDisplay);
 Task tCheckLoop(1000, TASK_FOREVER, &checkLoop, NULL, false, &checkSetup);
 Task tUpdateButtons(1, TASK_FOREVER, &updateButtons);
+Task tFastLED(10, TASK_FOREVER, &updateFastLED);
 
 // Prototypes for setup
 void setupWifi();
@@ -168,6 +183,10 @@ void setup(void) {
 
   setupButtons(); 
 
+  // Drive LED
+  pinMode(pinIRtx, OUTPUT);
+  digitalWrite(pinIRtx, HIGH);
+
   if (!SPIFFS.begin()) {
     Serial.println("SPIFFS initialisation failed!");
     while (1) yield(); // Stay here twiddling thumbs waiting
@@ -178,6 +197,10 @@ void setup(void) {
   //imagesSetup();
 
   //setupSpriteTest();
+
+  // FastLED
+  FastLED.addLeds<LED_TYPE,pinLedsData,pinLedsClock,COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
+  FastLED.setBrightness(BRIGHTNESS);
 
   // Start scheduler
   runner.init();
@@ -191,6 +214,7 @@ void setup(void) {
   runner.addTask(tGetSessionsList);
   runner.addTask(tSessionsDisplay);
   runner.addTask(tCheckLoop);
+  runner.addTask(tFastLED);
   // - start tasks
   tUpdateButtons.enable();
   tWifiCheck.enable();
@@ -199,8 +223,9 @@ void setup(void) {
   //tIdleDisplay.enable();
   //tImagesDisplay.enable();
   //tImagesDisplay.forceNextIteration();
-  //tCheckLoop.enable();
-  tSessionsDisplay.enable();
+  tCheckLoop.enable();
+  //tSessionsDisplay.enable();
+  tFastLED.enable();
   Serial.println("Initialised scheduler");
 
   // Print badges unique ID (mac address)
@@ -268,7 +293,13 @@ void updateButtons() {
   }
 }
 
-//TODO: Call debouncer.update every millisecond
+void updateFastLED() {
+  static int gHue = 0;
+  gHue++;
+  // FastLED's built-in rainbow generator
+  fill_rainbow( leds, NUM_LEDS, gHue, 7);
+  FastLED.show();
+}
 
 // Task cycle LEDs
 

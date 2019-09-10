@@ -37,8 +37,27 @@ void checkLoop() {
     int pinStatus = buttons[i].debouncer.read();
     drawButton(number, pinStatus, checkButtonsToggle[i], 10, 30 + vertSpace*i);
     Serial.printf("%d, ", pinStatus);
+
+    if (i == 0) {
+      // SW1 toggles IR
+      int val = checkButtonsToggle[i];
+      digitalWrite(pinIRtx, val);
+
+      drawIndicator("IR TX", val, 100, 30 + vertSpace*i);
+    }
   }
   Serial.println();
+}
+
+void drawIndicator(String text, bool status, int x, int y) {
+  img.createSprite(50, 20);
+  int backCol = status ? TFT_RED : TFT_GREEN;
+  int foreCol = status ? TFT_WHITE : TFT_BLACK;
+  img.fillSprite(backCol);
+  img.setTextColor(foreCol, foreCol);
+  img.drawString(text, 5, 5, 2);
+  img.pushSprite(x, y);
+  img.deleteSprite();
 }
 
 void drawButton(int number, bool status, bool toggle, int x, int y) {
