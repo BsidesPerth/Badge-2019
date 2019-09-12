@@ -106,7 +106,6 @@ buttons_t buttons[NUMBER_BUTTONS] = {
   {36, INPUT, HIGH, Bounce(), nullptr},  // SW4 = BUTTON_DOWN
   {35, INPUT, HIGH, Bounce(), nullptr},  // SW5 = BUTTON_LEFT
   {27, INPUT_PULLUP, HIGH, Bounce(), nullptr},  // SW6 = BUTTON_TOP
-  //{2, INPUT, HIGH, Bounce(), nullptr},  // SW6 = BUTTON_TOP
   {39, INPUT, HIGH, Bounce(), nullptr},  // SW7 = BUTTON_MID
   {33, INPUT, HIGH, Bounce(), nullptr}   // SW8 = BUTTON_BOTTOM
 };
@@ -134,7 +133,7 @@ const int pinLedsClock = 2;
 #define NUM_LEDS    8
 #define LED_TYPE    APA102
 #define COLOR_ORDER GRB
-#define BRIGHTNESS          10
+#define BRIGHTNESS  10
 CRGB leds[NUM_LEDS];
 
 
@@ -147,6 +146,7 @@ void runTimeSync();
 void runDisplayTime();
 void idleDisplay();
 bool idleOnEnable();
+bool imagesEnable();
 void imagesDisplay();
 void updateSessionsList();
 void checkLoop();
@@ -155,18 +155,21 @@ bool enableSessionsDisplay();
 void loopSessionsDisplay();
 void updateButtons();
 void updateFastLED();
+bool menuEnable();
+void menuLoop();
 // - tasks themselves 
 //     Task tTask(update time ms, update count, address of function);
 Task tWifiCheck(  5 * 1000, TASK_FOREVER, &runWifiCheck);
 Task tTimeSync( 60 * 1000, TASK_FOREVER, &runTimeSync);
 Task tDisplayTime( 1 * 1000, TASK_FOREVER, &runDisplayTime);
 Task tIdleDisplay( 10, TASK_FOREVER, &idleDisplay, NULL, false, &idleOnEnable);
-Task tImagesDisplay( 3000, TASK_FOREVER, &imagesDisplay);
+Task tImagesDisplay( 3000, TASK_FOREVER, &imagesDisplay, NULL, false, &imagesEnable);
 Task tGetSessionsList(500, 1, &updateSessionsList);
 Task tSessionsDisplay(1000, TASK_FOREVER, &loopSessionsDisplay, NULL, false, &enableSessionsDisplay);
 Task tCheckLoop(1000, TASK_FOREVER, &checkLoop, NULL, false, &checkSetup);
 Task tUpdateButtons(1, TASK_FOREVER, &updateButtons);
 Task tFastLED(10, TASK_FOREVER, &updateFastLED);
+Task tMenu(100, TASK_FOREVER, &menuLoop, NULL, false, &menuEnable);
 
 // Prototypes for setup
 void setupWifi();
@@ -182,26 +185,22 @@ void setup(void) {
   Serial.begin(2000000);
   Serial.println("Bsides Badge 2019 starting");
 
-  setupButtons(); 
+  // FastLED - initialse and blank
+  FastLED.addLeds<LED_TYPE,pinLedsData,pinLedsClock,COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
+  FastLED.setBrightness(BRIGHTNESS);
+  fill_solid(leds, NUM_LEDS, CRGB::Black);
+  FastLED.show();
 
-  // Drive LED
-  pinMode(pinIRtx, OUTPUT);
-  digitalWrite(pinIRtx, HIGH);
-
+  // Initialise filesystem (onboard flash)
   if (!SPIFFS.begin()) {
     Serial.println("SPIFFS initialisation failed!");
     while (1) yield(); // Stay here twiddling thumbs waiting
   }
 
+  // Initialse various modules
+  setupButtons(); 
   setupWifi();
   readSessionListFromFlash();
-  //imagesSetup();
-
-  //setupSpriteTest();
-
-  // FastLED
-  FastLED.addLeds<LED_TYPE,pinLedsData,pinLedsClock,COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
-  FastLED.setBrightness(BRIGHTNESS);
 
   // Start scheduler
   runner.init();
@@ -216,15 +215,17 @@ void setup(void) {
   runner.addTask(tSessionsDisplay);
   runner.addTask(tCheckLoop);
   runner.addTask(tFastLED);
+  runner.addTask(tMenu);
   // - start tasks
   tUpdateButtons.enable();
   tWifiCheck.enable();
   tTimeSync.enable();
+  tMenu.enable();
   //tDisplayTime.enable();
   //tIdleDisplay.enable();
   //tImagesDisplay.enable();
   //tImagesDisplay.forceNextIteration();
-  tCheckLoop.enable();
+  //tCheckLoop.enable();
   //tSessionsDisplay.enable();
   tFastLED.enable();
   Serial.println("Initialised scheduler");
@@ -238,31 +239,6 @@ void setup(void) {
 
 void loop() {
   runner.execute();
-  //loopSpriteTest();
-}
-
-void demoScreen() {
-  tft.fillScreen(TFT_BLACK);
-  
-  // Set "cursor" at top left corner of display (0,0) and select font 4
-  tft.setCursor(0, 0, 4);
-
-  // Set the font colour to be white with a black background
-  tft.setTextColor(TFT_WHITE, TFT_BLACK);
-
-  // We can now plot text on screen using the "print" class
-  tft.println("Bsides 2019\n");
-  tft.println("White text");
-  
-  tft.setTextColor(TFT_RED, TFT_BLACK);
-  tft.println("Red text");
-  
-  tft.setTextColor(TFT_GREEN, TFT_BLACK);
-  tft.println("Green text");
-  
-  tft.setTextColor(TFT_BLUE, TFT_BLACK);
-  tft.println("Blue text");
-
 }
 
 void setupButtons() {
@@ -301,13 +277,3 @@ void updateFastLED() {
   fill_rainbow( leds, NUM_LEDS, gHue, 7);
   FastLED.show();
 }
-
-// Task cycle LEDs
-
-// Task display current/next session
-
-// Maintain wifi
-
-// Download bsides details
-
-// Service infrared

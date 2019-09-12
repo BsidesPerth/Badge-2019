@@ -235,17 +235,25 @@ void sessionButtonHandler(EBUTTONS button, bool pressed) {
     sessPairDisp += 1;
     if (sessPairDisp >= sessionPairCount) {
       sessPairDisp = sessionPairCount - 1;
+    } else {
+      sessionDisplayNeedsRefresh = true;
     }
   } else if (pressed && (button == BUTTON_LEFT)) {
     // Prev session
     sessPairDisp -= 1;
     if (sessPairDisp < 0) {
       sessPairDisp = 0;
+    } else {
+      sessionDisplayNeedsRefresh = true;
     }
+  } else if (pressed && ((button == BUTTON_TOP) || (button == BUTTON_MID))) {
+    // Return to menu
+    tSessionsDisplay.disable();
+    tMenu.enable();
   }
   
   // Event driven display update
-  sessionDisplayNeedsRefresh = true;
+  
   loopSessionsDisplay();
 }
 
@@ -255,14 +263,14 @@ void disableSessionsDisplay() {
 
 void loopSessionsDisplay() {
   if (sessionDisplayNeedsRefresh) {
-    tft.fillScreen(TFT_NAVY);
+    //tft.fillScreen(TFT_NAVY);
     sessionDisplayNeedsRefresh = false;
     
     if (sessionCount == 0) {
       // Report no sessions
       sessionsDisplayNone();
     } else {
-      Serial.printf("{SESSIONS} Loop Sessions Display: Refresh %d", sessPairDisp);
+      Serial.printf("{SESSIONS} Loop Sessions Display: Refresh %d\n", sessPairDisp);
       if (sessPairDisp == -1) {
         // Display welcome page
         sessionsDisplayWelcome();
@@ -349,17 +357,22 @@ void sessionDisplayParent() {
   img.fillSprite(TFT_BLACK);
   img.setTextColor(TFT_WHITE);
   img.drawCentreString(timeToStr(sessionPairList[sessPairDisp].first->datetime), 120, 0, 4);
-  tft.setBitmapColor(TFT_YELLOW, TFT_TRANSPARENT);
-  img.pushSprite(0, 3, TFT_TRANSPARENT);
+  tft.setBitmapColor(TFT_YELLOW, TFT_NAVY);
+  img.pushSprite(0, 3);
   img.deleteSprite();
 
+  // TODO: Only draw arrow when next session exists (and blank othewise)
   drawArrow(10,   13, 20, 270, TFT_YELLOW);
   drawArrow(230, 13, 20, 90,  TFT_YELLOW);
-  
-  drawSessionOverview(sessionPairList[sessPairDisp].first, 25);
 
+  const int firstTop = 25;
+  drawSessionOverview(sessionPairList[sessPairDisp].first, firstTop);
+
+  const int secondTop = firstTop + 108;
   if (sessionPairList[sessPairDisp].second) {
-    drawSessionOverview(sessionPairList[sessPairDisp].second, 108+25);
+    drawSessionOverview(sessionPairList[sessPairDisp].second, secondTop);
+  } else {
+    blankSessionOverview(secondTop);
   }
 }
 
@@ -380,6 +393,15 @@ void drawSessionOverview(Session_t * session, int y) {
   img.pushSprite((240-img.width())/2, y+2);
   img.deleteSprite();
   
+  // Speaker name
+  img.createSprite(240, tft.fontHeight(2));
+  img.fillSprite(TFT_BLACK);
+  img.drawCentreString(session->speaker, 120, 0, 2);
+  tft.setBitmapColor(TFT_GREENYELLOW, TFT_NAVY);
+  //img.pushSprite(0, y+25+h+3);
+  img.pushSprite(0, y+18);
+  img.deleteSprite();
+
   // Title (2 line)
   int h = tft.fontHeight(2)*2 + tft.fontHeight(4) + 5;
   img.createSprite(240, h);
@@ -389,17 +411,15 @@ void drawSessionOverview(Session_t * session, int y) {
   //img.setTextFont(2);
   //img.print(multilineText);
   printMultilineWrapAtSpaces(session->title, 4, 2, 240);
-  tft.setBitmapColor(TFT_WHITE, TFT_TRANSPARENT);
-  img.pushSprite(0, y+25, TFT_TRANSPARENT);
+  tft.setBitmapColor(TFT_WHITE, TFT_NAVY);
+  //img.pushSprite(0, y+25);
+  img.pushSprite(0, y+35);
   img.deleteSprite();
   
-  // Speaker name
-  img.createSprite(240, tft.fontHeight(2));
-  img.fillSprite(TFT_BLACK);
-  img.drawString(session->speaker, 0, 0, 2);
-  tft.setBitmapColor(TFT_GREENYELLOW, TFT_TRANSPARENT);
-  img.pushSprite(0, y+25+h+3, TFT_TRANSPARENT);
-  img.deleteSprite();
+}
+
+void blankSessionOverview(int y) {
+  tft.fillRect(0, y, 240, 105, TFT_NAVY);
 }
 
 //out.length() == 0 ? font1, font2

@@ -16,39 +16,58 @@
 
 
 
-void idleSetup(void) {
-  img.createSprite(230, 230);
-  img.fillSprite(TFT_BLACK);
-}
-
 bool idleOnEnable() {
   tft.fillScreen(TFT_BLACK);
-  return true;
-}
 
-void idleDisplay() {
-  // Background rainbow
-  const byte rainbowSaturation = 255; // 200
-  const byte rainbowIntensity = 250;
-  static int loopCounter = 0;
-  for (int i = 0; i < img.height(); i++) {
-    CRGB col = CHSV(i + loopCounter, rainbowSaturation, rainbowIntensity);
-    unsigned int colour = col.red/8 << 11 | col.green/4 << 5 | col.blue/8;
-    img.drawFastHLine(0, i, img.width(), colour);
-  }
-  loopCounter += 1;
+  // Button handler
+  for (int i=0; i<NUMBER_BUTTONS; i++) {
+    buttons[i].callback = menuButtonHandler;
+  }  
 
   // White text
   // Do not plot the background colour by setting to same colour
-  img.setTextColor(TFT_WHITE, TFT_WHITE);
+  tft.setTextColor(TFT_WHITE, TFT_WHITE);
   //img.setTextColor(TFT_YELLOW, TFT_YELLOW);
-  
 
-  img.setTextSize(3);
-  img.drawCentreString("Bsides", 115, 50, 4);
-  img.setTextSize(1);
-  img.drawCentreString("2019", 115, 130, 8);
+  tft.setTextSize(3);
+  tft.drawCentreString("Bsides", 120, 50, 4);
+  tft.setTextSize(1);
+  tft.drawCentreString("2019", 120, 130, 8);
 
-  // Draw to screen
-  img.pushSprite(5, 5);
+  return true;
+}
+
+void menuButtonHandler(EBUTTONS button, bool pressed) {
+  if (pressed) {
+    // On any button, return to menu
+    tIdleDisplay.disable();
+    tMenu.enable();
+  }
+}
+
+void idleDisplay() {
+//  // Background rainbow
+//  const byte rainbowSaturation = 255; // 200
+//  const byte rainbowIntensity = 250;
+//  static int loopCounter = 0;
+//  for (int i = 0; i < img.height(); i++) {
+//    CRGB col = CHSV(i + loopCounter, rainbowSaturation, rainbowIntensity);
+//    unsigned int colour = col.red/8 << 11 | col.green/4 << 5 | col.blue/8;
+//    img.drawFastHLine(0, i, img.width(), colour);
+//  }
+//  loopCounter += 1;
+//
+//  // White text
+//  // Do not plot the background colour by setting to same colour
+//  img.setTextColor(TFT_WHITE, TFT_WHITE);
+//  //img.setTextColor(TFT_YELLOW, TFT_YELLOW);
+//  
+//
+//  img.setTextSize(3);
+//  img.drawCentreString("Bsides", 115, 50, 4);
+//  img.setTextSize(1);
+//  img.drawCentreString("2019", 115, 130, 8);
+//
+//  // Draw to screen
+//  img.pushSprite(5, 5);
 }
