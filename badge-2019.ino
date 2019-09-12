@@ -105,7 +105,8 @@ buttons_t buttons[NUMBER_BUTTONS] = {
   {34, INPUT, HIGH, Bounce(), nullptr},  // SW3 = BUTTON_RIGHT
   {36, INPUT, HIGH, Bounce(), nullptr},  // SW4 = BUTTON_DOWN
   {35, INPUT, HIGH, Bounce(), nullptr},  // SW5 = BUTTON_LEFT
-  {16, INPUT_PULLUP, LOW, Bounce(), nullptr},  // SW6 = BUTTON_TOP (was pin 2)
+  {27, INPUT_PULLUP, HIGH, Bounce(), nullptr},  // SW6 = BUTTON_TOP
+  //{2, INPUT, HIGH, Bounce(), nullptr},  // SW6 = BUTTON_TOP
   {39, INPUT, HIGH, Bounce(), nullptr},  // SW7 = BUTTON_MID
   {33, INPUT, HIGH, Bounce(), nullptr}   // SW8 = BUTTON_BOTTOM
 };
@@ -133,7 +134,7 @@ const int pinLedsClock = 2;
 #define NUM_LEDS    8
 #define LED_TYPE    APA102
 #define COLOR_ORDER GRB
-#define BRIGHTNESS          96
+#define BRIGHTNESS          10
 CRGB leds[NUM_LEDS];
 
 

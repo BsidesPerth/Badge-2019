@@ -46,6 +46,8 @@ void checkLoop() {
       drawIndicator("IR TX", val, 100, 30 + vertSpace*i);
     }
   }
+  pinMode(16, INPUT_PULLUP);
+  Serial.printf(" GPIO16 %d", digitalRead(16));
   Serial.println();
 }
 
