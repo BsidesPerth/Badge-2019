@@ -34,9 +34,12 @@ int sessionPairCount = 0;
 
 //prototypes
 void drawSessionOverview(Session_t * session, int y);
+time_t strToTime(const String& string);
+String timeToStr(time_t& time);
+bool parseNextItem(int& start, int& end, const String& str, const char* search, String& item);
 
 void readSessionListFromFlash() {
-  Serial.println("{SESSIONS} parseSessionListFromString");
+  Serial.println(F("{SESSIONS} parseSessionListFromString"));
   String diskFile = readFile(sessionsFilename);
   if (diskFile.length() > 0) {
     parseSessionListFromString(diskFile);
@@ -44,7 +47,7 @@ void readSessionListFromFlash() {
 }
 
 void parseSessionListFromString(String & sessionListStr) {
-  Serial.println("{SESSIONS} parseSessionListFromString");
+  Serial.println(F("{SESSIONS} parseSessionListFromString"));
   const char * itemSep = ",";
   const char * lineSep = "\n";
   int start = 0;
@@ -124,7 +127,7 @@ bool parseNextItem(int& start, int& end, const String& str, const char* search, 
 void updateSessionsList()
 {
   if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("{SESSIONS} Get sessions list from website");
+    Serial.println(F("{SESSIONS} Get sessions list from website"));
     
     String sessionListStr;
     downloadSessionsList(sessionListStr);
@@ -132,10 +135,10 @@ void updateSessionsList()
     if (sessionListStr.length() > 0) {
       writeSessionListIfNew(sessionListStr);
     } else {
-      Serial.println("{SESSIONS} No list received");
+      Serial.println(F("{SESSIONS} No list received"));
     }
   } else {
-    Serial.println("{SESSIONS} No wifi connection, cannot update");
+    Serial.println(F("{SESSIONS} No wifi connection, cannot update"));
   }
 }
 
@@ -143,13 +146,13 @@ void updateSessionsList()
 void downloadSessionsList(String & sessionListStr) {
   // Use HTTPClient to do web requests
   HTTPClient http;
-  Serial.print("[SESSIONS] Setup HTTP Request: ");
+  Serial.print(F("[SESSIONS] Setup HTTP Request: "));
   Serial.println(sessionsUrl);
   //http.begin("https://www.howsmyssl.com/a/check", ca); //HTTPS
   http.begin(sessionsUrl); //HTTP
 
   Serial.flush();
-  Serial.print("[SESSIONS] GET...\n");
+  Serial.print(F("[SESSIONS] GET...\n"));
   // start connection and send HTTP header
   int httpCode = http.GET();
 
@@ -177,31 +180,31 @@ void writeSessionListIfNew(String & sessionListStr) {
   Serial.flush();
   
   // Dump response
-  Serial.println("{SESSIONS) Response text:");
+  Serial.println(F("{SESSIONS) Response text:"));
   Serial.println(sessionListStr);
   
   // Check for changes
   String diskFile = readFile(sessionsFilename);
   if (diskFile.length() > 0) {
-    Serial.println("{SESSIONS) Currently on badge:");
+    Serial.println(F("{SESSIONS) Currently on badge:"));
     Serial.println(diskFile);
   }
   if (!diskFile.equals(sessionListStr)) {
     // File changed so save to disk
-    Serial.println("{SESSIONS} Writing list to file");
+    Serial.println(F("{SESSIONS} Writing list to file"));
     writeFile(sessionsFilename, sessionListStr.c_str());
 
     // List new so parse it into memory
-    Serial.println("{SESSIONS} Parsing into memory");
+    Serial.println(F("{SESSIONS} Parsing into memory"));
     parseSessionListFromString(sessionListStr);
 
     // Refresh display if currently displaying session times
     if (tSessionsDisplay.isEnabled()) {
-      Serial.println("{SESSIONS} Refresh screen");
+      Serial.println(F("{SESSIONS} Refresh screen"));
       enableSessionsDisplay();
     }
   } else {
-    Serial.println("{SESSIONS} No change to sessions file");
+    Serial.println(F("{SESSIONS} No change to sessions file"));
   }
   
 }
@@ -214,7 +217,7 @@ int sessPairDisp = 2;
 bool sessionDisplayNeedsRefresh = true;
 
 bool enableSessionsDisplay() {
-  Serial.println("{SESSIONS} Enable Sessions Display");
+  Serial.println(F("{SESSIONS} Enable Sessions Display"));
   tft.fillScreen(TFT_NAVY);
   tft.setTextSize(1);
   img.setTextColor(TFT_WHITE);

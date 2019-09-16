@@ -13,8 +13,8 @@ struct TMenuEntry {
 
 const int menuCount = 7;
 TMenuEntry menuEntries[menuCount] = {
-  {"Name Tag", &tIdleDisplay},
-  {"Edit Name", 0},
+  {"Name Tag", &tNameTag},
+  {"Edit Name", &tNameEdit},
   {"Session Times", &tSessionsDisplay},
   {"Badge Em All", 0},
   {"Game of Life", 0},
@@ -23,7 +23,7 @@ TMenuEntry menuEntries[menuCount] = {
 };
 
 bool menuEnable() {
-  Serial.println("{MENU} Switch to Menu");
+  Serial.println(F("{MENU} Switch to Menu"));
   tft.fillScreen(TFT_NAVY);
   tft.setTextSize(1);
   img.setTextColor(TFT_WHITE);
@@ -57,7 +57,8 @@ void idleButtonHandler(EBUTTONS button, bool pressed) {
     // Select item
     auto & selected = menuEntries[menuSelection];
     if (selected.task) {
-      Serial.printf("{MENU} Select %s\n", selected.name);
+      Serial.print(F("{MENU} Select "));
+      Serial.println(selected.name);
       tMenu.disable();
       selected.task->enable();
     }
@@ -68,13 +69,14 @@ void menuLoop() {}
 
 void menuRedraw() {
   menuNeedsRefresh = false;
-  Serial.printf("{MENU} Refresh %d\n", menuSelection);
+  Serial.print(F("{MENU} Refresh "));
+  Serial.println(menuSelection);
   
   const int vertSpace = 30;
   const int boxWidth = 130;
   const int leftPos = (240-boxWidth)/2;
   for (int i=0; i<menuCount; i++) {
-    menuDrawItem(menuEntries[i].name, i==menuSelection, leftPos, 30 + vertSpace*i, boxWidth);
+    menuDrawItem(menuEntries[i].name, i==menuSelection, leftPos, 35 + vertSpace*i, boxWidth);
   }
 }
 
@@ -86,7 +88,6 @@ void menuDrawItem(const char * name, bool selected, int x, int y, int width) {
   img.fillSprite(backCol);
   img.setTextColor(foreCol, foreCol);
   img.drawCentreString(name, width/2, 3, 2);
-  //img.drawString(name, 3, 3, 2);
   img.pushSprite(x, y);
   img.deleteSprite();
 }

@@ -136,6 +136,13 @@ const int pinLedsClock = 2;
 #define BRIGHTNESS  10
 CRGB leds[NUM_LEDS];
 
+// From TFT_eSPI Font_Demo_1
+//  This sketch uses font files created from the Noto family of fonts:
+//  https://www.google.com/get/noto/
+#define AA_FONT_SMALL "NotoSansBold15"
+#define AA_FONT_LARGE "NotoSansBold36"
+
+#include "Free_Fonts.h" // Include the header file attached to this sketch
 
 
 // Task Scheduler
@@ -144,8 +151,11 @@ Scheduler runner;
 void runWifiCheck();
 void runTimeSync();
 void runDisplayTime();
-void idleDisplay();
-bool idleOnEnable();
+void nameTagLoop();
+bool nameTagEnable();
+void nameEditLoop();
+bool nameEditEnable();
+void nameEditDisable();
 bool imagesEnable();
 void imagesDisplay();
 void updateSessionsList();
@@ -157,12 +167,14 @@ void updateButtons();
 void updateFastLED();
 bool menuEnable();
 void menuLoop();
+void checkRAM();
 // - tasks themselves 
 //     Task tTask(update time ms, update count, address of function);
 Task tWifiCheck(  5 * 1000, TASK_FOREVER, &runWifiCheck);
 Task tTimeSync( 60 * 1000, TASK_FOREVER, &runTimeSync);
 Task tDisplayTime( 1 * 1000, TASK_FOREVER, &runDisplayTime);
-Task tIdleDisplay( 10, TASK_FOREVER, &idleDisplay, NULL, false, &idleOnEnable);
+Task tNameTag( 100, TASK_FOREVER, &nameTagLoop, NULL, false, &nameTagEnable);
+Task tNameEdit( 10000, TASK_FOREVER, NULL, NULL, false, &nameEditEnable, &nameEditDisable);
 Task tImagesDisplay( 3000, TASK_FOREVER, &imagesDisplay, NULL, false, &imagesEnable);
 Task tGetSessionsList(500, 1, &updateSessionsList);
 Task tSessionsDisplay(1000, TASK_FOREVER, &loopSessionsDisplay, NULL, false, &enableSessionsDisplay);
@@ -170,6 +182,7 @@ Task tCheckLoop(1000, TASK_FOREVER, &checkLoop, NULL, false, &checkSetup);
 Task tUpdateButtons(1, TASK_FOREVER, &updateButtons);
 Task tFastLED(10, TASK_FOREVER, &updateFastLED);
 Task tMenu(100, TASK_FOREVER, &menuLoop, NULL, false, &menuEnable);
+Task tCheckRAM(5000, TASK_FOREVER, &checkRAM);
 
 // Prototypes for setup
 void setupWifi();
@@ -181,9 +194,9 @@ void setup(void) {
   tft.init();
   tft.fillScreen(TFT_BLACK);
   
-  //Serial.begin(115200);
-  Serial.begin(2000000);
-  Serial.println("Bsides Badge 2019 starting");
+  Serial.begin(115200);
+  //Serial.begin(2000000);
+  Serial.println(F("Bsides Badge 2019 starting"));
 
   // FastLED - initialse and blank
   FastLED.addLeds<LED_TYPE,pinLedsData,pinLedsClock,COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
@@ -193,14 +206,20 @@ void setup(void) {
 
   // Initialise filesystem (onboard flash)
   if (!SPIFFS.begin()) {
-    Serial.println("SPIFFS initialisation failed!");
+    Serial.println(F("SPIFFS initialisation failed!"));
     while (1) yield(); // Stay here twiddling thumbs waiting
   }
 
   // Initialse various modules
   setupButtons(); 
   setupWifi();
+//  Serial.println(F("test point 1"));
+//  Serial.flush();
+//  listFiles();  // hogs memory
+//  Serial.println(F("test point 2"));
+//  Serial.flush();
   readSessionListFromFlash();
+  readTagFromFlash();
 
   // Start scheduler
   runner.init();
@@ -209,31 +228,33 @@ void setup(void) {
   runner.addTask(tWifiCheck);
   runner.addTask(tTimeSync);
   runner.addTask(tDisplayTime);
-  runner.addTask(tIdleDisplay);
+  runner.addTask(tNameTag);
+  runner.addTask(tNameEdit);
   runner.addTask(tImagesDisplay);
   runner.addTask(tGetSessionsList);
   runner.addTask(tSessionsDisplay);
   runner.addTask(tCheckLoop);
   runner.addTask(tFastLED);
   runner.addTask(tMenu);
+  runner.addTask(tCheckRAM);
   // - start tasks
   tUpdateButtons.enable();
   tWifiCheck.enable();
   tTimeSync.enable();
-  tMenu.enable();
-  //tDisplayTime.enable();
-  //tIdleDisplay.enable();
-  //tImagesDisplay.enable();
-  //tImagesDisplay.forceNextIteration();
-  //tCheckLoop.enable();
-  //tSessionsDisplay.enable();
   tFastLED.enable();
-  Serial.println("Initialised scheduler");
+  tCheckRAM.enable();
+  //tMenu.enable();
+  //tNameEdit.enable();
+  tNameTag.enable();
+  Serial.println(F("Initialised scheduler"));
 
   // Print badges unique ID (mac address)
   uint64_t chipid=ESP.getEfuseMac();//The chip ID is essentially its MAC address(length: 6 bytes).
-  Serial.printf("ESP32 Chip ID = %04X",(uint16_t)(chipid>>32));//print High 2 bytes
-  Serial.printf("%08X\n",(uint32_t)chipid);//print Low 4bytes.
+//  Serial.printf(F("ESP32 Chip ID = %04X"),(uint16_t)(chipid>>32));//print High 2 bytes
+//  Serial.printf(F("%08X\n"),(uint32_t)chipid);//print Low 4bytes.
+  Serial.print(F("ESP32 Chip ID = "));
+  Serial.print((uint16_t)(chipid>>32), HEX);//print High 2 bytes
+  Serial.println((uint32_t)chipid, HEX);//print Low 4bytes.
   
 }
 
@@ -276,4 +297,24 @@ void updateFastLED() {
   // FastLED's built-in rainbow generator
   fill_rainbow( leds, NUM_LEDS, gHue, 7);
   FastLED.show();
+}
+
+void checkRAM() {
+  Serial.print(F("Check RAM: "));
+  Serial.println(ESP.getFreeHeap());
+}
+
+void checkFontsExist() {
+  // TFT_eSPI Font_Demo_1
+  // ESP32 will crash if any of the fonts are missing
+  bool font_missing = false;
+  if (SPIFFS.exists("/NotoSansBold15.vlw")    == false) font_missing = true;
+  if (SPIFFS.exists("/NotoSansBold36.vlw")    == false) font_missing = true;
+
+  if (font_missing)
+  {
+    Serial.println(F("\r\nFont missing in SPIFFS, did you upload it?"));
+    while(1) yield();
+  }
+  else Serial.println(F("\r\nFonts found OK."));
 }

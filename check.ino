@@ -3,11 +3,11 @@
 bool checkButtonsToggle[NUMBER_BUTTONS] = {0};
 
 bool checkSetup() {
-  Serial.println("Test Setup");
+  Serial.println(F("Test Setup"));
   tft.fillScreen(TFT_BLACK);
   tft.setTextSize(1);
   tft.setTextColor(TFT_WHITE, TFT_WHITE);
-  tft.drawCentreString("Self-Check", 120, 0, 4);
+  tft.drawCentreString(F("Self-Check"), 120, 0, 4);
 
   for (int i=0; i<NUMBER_BUTTONS; i++) {
     checkButtonsToggle[i] = false;
@@ -28,7 +28,7 @@ void checkButtonHandler(EBUTTONS button, bool pressed) {
 }
 
 void checkLoop() {
-  Serial.print("Self-Check: ");
+  Serial.print(F("Self-Check: "));
   
   const int vertSpace = 30;
   for (int i=0; i<7; i++) {

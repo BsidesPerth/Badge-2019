@@ -77,30 +77,32 @@ void listDir(fs::FS &fs, const char * dirname, uint8_t levels) {
 
   File root = fs.open(dirname);
   if (!root) {
-    Serial.println("- failed to open directory");
+    Serial.println(F("- failed to open directory"));
     return;
   }
   if (!root.isDirectory()) {
-    Serial.println(" - not a directory");
+    Serial.println(F(" - not a directory"));
     return;
   }
 
   File file = root.openNextFile();
   while (file) {
     if (file.isDirectory()) {
-      Serial.print("  DIR : ");
+      Serial.print(F("  DIR : "));
       Serial.println(file.name());
       if (levels) {
         listDir(fs, file.name(), levels - 1);
       }
     } else {
-      Serial.print("  FILE: ");
+      Serial.print(F("  FILE: "));
       Serial.print(file.name());
-      Serial.print("\tSIZE: ");
+      Serial.print(F("\tSIZE: "));
       Serial.println(file.size());
     }
     file = root.openNextFile();
   }
+
+  root.close();
 }
 
 // Read a file from SPIFFS and return as a string
@@ -109,7 +111,7 @@ String readFile(const char * path) {
 
   File file = SPIFFS.open(path);
   if (!file || file.isDirectory()) {
-    Serial.println("- failed to open file for reading");
+    Serial.println(F("- failed to open file for reading"));
     return String();
   }
 
@@ -126,13 +128,13 @@ void writeFile(const char * path, const char * message) {
 
   File file = SPIFFS.open(path, FILE_WRITE);
   if (!file) {
-    Serial.println("- failed to open file for writing");
+    Serial.println(F("- failed to open file for writing"));
     return;
   }
   if (file.print(message)) {
-    Serial.println("- file written");
+    Serial.println(F("- file written"));
   } else {
-    Serial.println("- frite failed");
+    Serial.println(F("- frite failed"));
   }
 }
 
@@ -145,13 +147,13 @@ void appendFile(fs::FS &fs, const char * path, const char * message) {
 
   File file = fs.open(path, FILE_APPEND);
   if (!file) {
-    Serial.println("- failed to open file for appending");
+    Serial.println(F("- failed to open file for appending"));
     return;
   }
   if (file.print(message)) {
-    Serial.println("- message appended");
+    Serial.println(F("- message appended"));
   } else {
-    Serial.println("- append failed");
+    Serial.println(F("- append failed"));
   }
 }
 
@@ -167,9 +169,9 @@ void renameFile(fs::FS &fs, const char * path1, const char * path2) {
 void deleteFile(fs::FS &fs, const char * path) {
   Serial.printf("Deleting file: %s\r\n", path);
   if (fs.remove(path)) {
-    Serial.println("- file deleted");
+    Serial.println(F("- file deleted"));
   } else {
-    Serial.println("- delete failed");
+    Serial.println(F("- delete failed"));
   }
 }
 
@@ -264,9 +266,10 @@ void deleteFile(fs::FS &fs, const char * path) {
 //====================================================================================
 void drawJpeg(const char *filename, int xpos, int ypos) {
 
-  Serial.println("===========================");
-  Serial.print("Drawing file: "); Serial.println(filename);
-  Serial.println("===========================");
+  Serial.println(F("==========================="));
+  Serial.print(F("Drawing file: "));
+  Serial.println(filename);
+  Serial.println(F("==========================="));
 
   // Open the named file (the Jpeg decoder library will close it after rendering image)
   fs::File jpegFile = SPIFFS.open( filename, "r");    // File handle reference for SPIFFS
@@ -274,7 +277,9 @@ void drawJpeg(const char *filename, int xpos, int ypos) {
 
   //ESP32 always seems to return 1 for jpegFile so this null trap does not work
   if ( !jpegFile ) {
-    Serial.print("ERROR: File \""); Serial.print(filename); Serial.println ("\" not found!");
+    Serial.print(F("ERROR: File \"")); 
+    Serial.print(filename); 
+    Serial.println(F("\" not found!"));
     return;
   }
 
@@ -293,7 +298,7 @@ void drawJpeg(const char *filename, int xpos, int ypos) {
     jpegRender(xpos, ypos);
   }
   else {
-    Serial.println("Jpeg file format not supported!");
+    Serial.println(F("Jpeg file format not supported!"));
   }
 }
 
@@ -369,8 +374,8 @@ void jpegRender(int xpos, int ypos) {
   drawTime = millis() - drawTime; // Calculate the time it took
 
   // print the results to the serial port
-  Serial.print  ("Total render time was    : "); Serial.print(drawTime); Serial.println(" ms");
-  Serial.println("=====================================");
+  Serial.print  (F("Total render time was    : ")); Serial.print(drawTime); Serial.println(F(" ms"));
+  Serial.println(F("====================================="));
 
 }
 
@@ -379,19 +384,19 @@ void jpegRender(int xpos, int ypos) {
 //====================================================================================
 void jpegInfo() {
 
-  Serial.println("===============");
-  Serial.println("JPEG image info");
-  Serial.println("===============");
-  Serial.print  ("Width      :"); Serial.println(JpegDec.width);
-  Serial.print  ("Height     :"); Serial.println(JpegDec.height);
-  Serial.print  ("Components :"); Serial.println(JpegDec.comps);
-  Serial.print  ("MCU / row  :"); Serial.println(JpegDec.MCUSPerRow);
-  Serial.print  ("MCU / col  :"); Serial.println(JpegDec.MCUSPerCol);
-  Serial.print  ("Scan type  :"); Serial.println(JpegDec.scanType);
-  Serial.print  ("MCU width  :"); Serial.println(JpegDec.MCUWidth);
-  Serial.print  ("MCU height :"); Serial.println(JpegDec.MCUHeight);
-  Serial.println("===============");
-  Serial.println("");
+  Serial.println(F("==============="));
+  Serial.println(F("JPEG image info"));
+  Serial.println(F("==============="));
+  Serial.print  (F("Width      :")); Serial.println(JpegDec.width);
+  Serial.print  (F("Height     :")); Serial.println(JpegDec.height);
+  Serial.print  (F("Components :")); Serial.println(JpegDec.comps);
+  Serial.print  (F("MCU / row  :")); Serial.println(JpegDec.MCUSPerRow);
+  Serial.print  (F("MCU / col  :")); Serial.println(JpegDec.MCUSPerCol);
+  Serial.print  (F("Scan type  :")); Serial.println(JpegDec.scanType);
+  Serial.print  (F("MCU width  :")); Serial.println(JpegDec.MCUWidth);
+  Serial.print  (F("MCU height :")); Serial.println(JpegDec.MCUHeight);
+  Serial.println(F("==============="));
+  Serial.println();
 }
 
 //====================================================================================
@@ -404,23 +409,23 @@ void createArray(const char *filename) {
   //  File jpgFile = SD.open( filename, FILE_READ);  // or, file handle reference for SD library
 
   if ( !jpgFile ) {
-    Serial.print("ERROR: File \""); Serial.print(filename); Serial.println ("\" not found!");
+    Serial.print(F("ERROR: File \"")); Serial.print(filename); Serial.println (F("\" not found!"));
     return;
   }
 
   uint8_t data;
   byte line_len = 0;
-  Serial.println("");
-  Serial.println("// Generated by a JPEGDecoder library example sketch:");
-  Serial.println("// https://github.com/Bodmer/JPEGDecoder");
-  Serial.println("");
-  Serial.println("#if defined(__AVR__)");
-  Serial.println("  #include <avr/pgmspace.h>");
-  Serial.println("#endif");
-  Serial.println("");
-  Serial.print  ("const uint8_t ");
+  Serial.println();
+  Serial.println(F("// Generated by a JPEGDecoder library example sketch:"));
+  Serial.println(F("// https://github.com/Bodmer/JPEGDecoder"));
+  Serial.println();
+  Serial.println(F("#if defined(__AVR__)"));
+  Serial.println(F("  #include <avr/pgmspace.h>"));
+  Serial.println(F("#endif"));
+  Serial.println();
+  Serial.print  (F("const uint8_t "));
   while (*filename != '.') Serial.print(*filename++);
-  Serial.println("[] PROGMEM = {"); // PROGMEM added for AVR processors, it is ignored by Due
+  Serial.println(F("[] PROGMEM = {")); // PROGMEM added for AVR processors, it is ignored by Due
 
   while ( jpgFile.available()) {
 
@@ -435,7 +440,7 @@ void createArray(const char *filename) {
 
   }
 
-  Serial.println("};\r\n");
+  Serial.println(F("};\r\n"));
   jpgFile.close();
 }
 //====================================================================================

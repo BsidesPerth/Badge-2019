@@ -17,10 +17,10 @@ void runTimeSync() {
   // Only start or update time server while connected to wifi
   if (WiFi.status() == WL_CONNECTED) {
     if (!timeServerSetup) {
-      Serial.print("{TIME} Starting time server... ");
+      Serial.print(F("{TIME} Starting time server... "));
       timeClient.begin();
-      Serial.println("DONE");
-      Serial.println("{TIME} Updating initial time");
+      Serial.println(F("DONE"));
+      Serial.println(F("{TIME} Updating initial time"));
       timeServerSetup = true;
     } 
     
@@ -31,13 +31,13 @@ void runTimeSync() {
 
       if (result) {
         timeValid = true;
-        Serial.print("{TIME} Updated time: ");
+        Serial.print(F("{TIME} Updated time: "));
         Serial.print(getDateStr());
         Serial.print(" ");
         Serial.print(getTimeStr());
         Serial.println();
       } else {
-        Serial.println("{TIME} Update failed");
+        Serial.println(F("{TIME} Update failed"));
       }      
     }
   }
