@@ -76,6 +76,7 @@
 #include "timelib.h"  // local copy since ESP32 seems to miss <time.h>
 
 // TFT Screen
+#include "Free_Fonts.h" // Helpers for the TFT eSPI adafruit "free fonts"
 TFT_eSPI tft = TFT_eSPI();  // Create screen object 240x240
 TFT_eSprite img = TFT_eSprite(&tft);  // Sprite for in memory rendering
 
@@ -136,13 +137,6 @@ const int pinLedsClock = 2;
 #define BRIGHTNESS  10
 CRGB leds[NUM_LEDS];
 
-// From TFT_eSPI Font_Demo_1
-//  This sketch uses font files created from the Noto family of fonts:
-//  https://www.google.com/get/noto/
-#define AA_FONT_SMALL "NotoSansBold15"
-#define AA_FONT_LARGE "NotoSansBold36"
-
-#include "Free_Fonts.h" // Include the header file attached to this sketch
 
 
 // Task Scheduler

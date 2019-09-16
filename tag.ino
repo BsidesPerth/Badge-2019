@@ -1,18 +1,8 @@
 // Name tag and name editor to show attendee name
 // Acts as the idle screen shown when badge not in active use and puts the ESP32 to sleep
 
-// Some details on fonts:
-// * setTextFont() 1 to 8
-//   * 1 = GLCD font (tiny) "Standard ASCII 5x7 font"
-//   * 2 = Font 16: 16pt, normal font, 96 chars
-//   * 3 = unused
-//   * 4 = Font 32: 26pt, normal font, 96 chars
-//   * 5 = unused
-//   * 6 = Font 64: 48pt Numbers and Time Only! "[space] 0 1 2 3 4 5 6 7 8 9 : - . a p m"
-//   * 7 = 7 Segment LCD Font (48pt) Numbers Only! "[space] 0 1 2 3 4 5 6 7 8 9 : . -"
-//   * 8 = Font 72 (Arial 75pt) Numbers Only! "[space] 0 1 2 3 4 5 6 7 8 9 0 : - ."
-// * setTextSize() is scaling multiplier on font
-// * Adafruit free fonts available (better range of heights) but might be slower, more flickery?
+// TODO: Go to sleep and wait for button press/ wake up timer
+// TODO: Set FastLED colours to screen colours - some difference between awake and sleep
 
 const char * tagNameFile = "/name_tag.txt";
 
@@ -24,7 +14,8 @@ const char LETTERS[letterCount] = {
   'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'
 };
 int letterPos = 0;
-String tagName = "TEST";
+String tagName = "";
+const int TAG_NAME_MAX_LEN = 50;
 
 //======================================================
 
@@ -36,6 +27,8 @@ int tagColPos = 0;
 
 //======================================================
 
+const int TAG_FONTS_COUNT = 4;
+const GFXfont * TAG_FONTS[TAG_FONTS_COUNT] = {FSS24, FSS18, FSS12, FSS9};
 
 bool nameTagEnable() {
   // Button handler
@@ -43,52 +36,113 @@ bool nameTagEnable() {
     buttons[i].callback = nameTagButtonHandler;
   }  
 
-//  // White text
-//  // Do not plot the background colour by setting to same colour
-//  tft.setTextColor(TFT_WHITE, TFT_WHITE);
-//  //img.setTextColor(TFT_YELLOW, TFT_YELLOW);
-//
-//  tft.setTextSize(3);
-//  tft.drawCentreString("Bsides", 120, 50, 4);
-//  tft.setTextSize(1);
-//  tft.drawCentreString("2019", 120, 130, 8);
-
-//  tft.loadFont(AA_FONT_LARGE); // Load another different font
-//
-//  tft.fillScreen(TFT_BLACK);
-//  tft.setTextColor(TFT_YELLOW, TFT_BLACK); // Change the font colour and the background colour
-//  tft.setCursor(0, 0); // Set cursor at top left of screen
-//  tft.println("Large font!");
-//
-//
-//  //tft.setTextDatum(TC_DATUM); // Top Centre datum
-//
-//  //int xpos = tft.width() / 2; // Half the screen width
-//  //int ypos = 50;
-//  //img.setTextColor(TFT_WHITE, TFT_BLUE); // Set the font colour and the background colour
-//
-//  //tft.setCursor(xpos, ypos);  // Set the tft cursor position
-//  img.printToSprite("36pt font");  // Text is rendered via a minimally sized sprite
-//
-//  //ypos += img.fontHeight();  // Get the font height and move ypos down
-//
-//  tft.unloadFont(); // Remove the font to recover memory used
-
-  //FSS24
-  tft.setTextDatum(TC_DATUM);
-
+  // Colours as per user selection
+  tft.fillScreen(TAG_BK_COLS[tagColPos]);
   tft.setTextColor(TAG_FG_COLS[tagColPos], TAG_BK_COLS[tagColPos]);
-  tft.fillScreen(TAG_BK_COLS[tagColPos]);            // Clear screen
+  tft.setTextWrap(false, false);
 
-  // TODO: Reduce font size and split on spaces automatically
+  if (tagName.length() > 0) {
+    // Bsides title
+    img.setFreeFont(FSS18);
+    img.setColorDepth(1);
+    if (img.createSprite(tft.width(), 50)) {
+      Serial.println(F("{TAG} Sprite created"));
+    } else {
+      Serial.println(F("{TAG} Sprite creation failed"));
+    }
+    img.fillSprite(TFT_BLACK);
+    img.setTextColor(TFT_WHITE);
+    img.drawCentreString("BSides 2019", tft.width()/2, 12, GFXFF);
+    img.setBitmapColor(TAG_BK_COLS[tagColPos], TAG_FG_COLS[tagColPos]);
+    img.pushSprite(0, 0);
+    img.deleteSprite();
+
+    //tft.drawFastHLine(
+    
+    //tft.drawString(tagName, tft.width()/2, 50, GFXFF);// Print the string name of the font
+    // User name tag
+    int nameStartY = 70;
+    // Check if it will fit
+    if (printOneWordPerLineVariableHeight(tagName, tft.width(), nameStartY, true)) {
+      printOneWordPerLineVariableHeight(tagName, tft.width(), nameStartY, false);
+    } else {
+      img.createSprite(tft.width()-20, tft.height() - nameStartY);
+      img.fillSprite(TFT_BLACK);
+      img.setCursor(0, 0);
+      printMultilineWrapAtSpaces(tagName, 4, 4, tft.width()-20);
+      img.setBitmapColor(TAG_FG_COLS[tagColPos], TAG_BK_COLS[tagColPos]);
+      img.pushSprite(10, nameStartY);
+      img.deleteSprite();
+    }
+  } else {
+    // No name set default
+    tft.setFreeFont(FSS24);
+    //tft.setTextSize(2);
+    tft.drawCentreString("BSides", tft.width()/2, 70, GFXFF);
+    //tft.setTextSize(1);
+    //tft.setTextFont(8);
+    tft.drawCentreString("2019", tft.width()/2, 120, GFXFF);
+  }
   
-  tft.setFreeFont(FSS24);                 // Select the font
-  //tft.setTextSize(2);
-  tft.drawString(tagName, tft.width()/2, 50, GFXFF);// Print the string name of the font
-  //tft.setTextSize(1);
-
   return true;
 }
+
+bool printOneWordPerLineVariableHeight(const String &str, int width, int y, bool simulate) {
+  int pos = 0;
+  String nextWord;
+  int h = y;
+  
+  while (true) {
+    // Get next word in string (space separated)
+    int next = str.indexOf(" ", pos);
+    if (next != -1) {
+      nextWord = str.substring(pos, next);
+    } else {
+      // The rest of string is next word
+      nextWord = str.substring(pos);
+    }
+
+    // Find the largest font that fits
+    int fontIndex = 0;
+    for (int i=0; i<TAG_FONTS_COUNT; i++) {
+      fontIndex = i;
+      tft.setFreeFont(TAG_FONTS[fontIndex]);
+      if (tft.textWidth(nextWord) < width) {
+        // This word fits on screen at this font size.
+        // Font size has been set.
+        break;
+      } // else: it doesn't fit on screen, try smaller font
+    }
+
+    if (!simulate) {
+      if (tft.textWidth(nextWord) < width) {
+        // Draw centred
+        tft.drawCentreString(nextWord, width/2, h, GFXFF);
+      } else {
+        // Draw left aligned so right is cut off
+        tft.drawString(nextWord, 0, h, GFXFF);
+      }
+    }
+
+    // Move down by font height
+    h += tft.fontHeight();
+
+    if (h > tft.height()) {
+      // Dont bother continuing if we are beyond screen.
+      // Failed to fit on screen.
+      return false;
+    }
+
+    // Advance pos to get it past found space and if no space then done
+    if (next != -1) {
+      pos = next+1;
+    } else {
+      break;
+    }
+  }
+  return true;
+}
+
 
 void nameTagButtonHandler(EBUTTONS button, bool pressed) {
   if (pressed) {
@@ -285,7 +339,9 @@ void selectLetter() {
       tagName = tagName.substring(0, tagName.length() - 1);
     }
   } else {
-    tagName = tagName + String(LETTERS[letterPos]);
+    if (tagName.length() < TAG_NAME_MAX_LEN) {
+      tagName = tagName + String(LETTERS[letterPos]);
+    }
   }
 }
 
