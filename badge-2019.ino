@@ -133,10 +133,10 @@ const int pinLedsClock = 2;
 // FastLED
 #define NUM_LEDS    8
 #define LED_TYPE    APA102
-#define COLOR_ORDER GRB
+#define COLOR_ORDER BGR
 #define BRIGHTNESS  10
 CRGB leds[NUM_LEDS];
-
+bool ledRainbow = true;
 
 
 // Task Scheduler
@@ -147,6 +147,7 @@ void runTimeSync();
 void runDisplayTime();
 void nameTagLoop();
 bool nameTagEnable();
+void nameTagDisable();
 void nameEditLoop();
 bool nameEditEnable();
 void nameEditDisable();
@@ -154,11 +155,13 @@ bool imagesEnable();
 void imagesDisplay();
 void updateSessionsList();
 void checkLoop();
-bool checkSetup();
+bool checkEnable();
+void checkDisable();
 bool enableSessionsDisplay();
 void loopSessionsDisplay();
 void updateButtons();
 void updateFastLED();
+void ledRainbowCycle();
 bool menuEnable();
 void menuLoop();
 void checkRAM();
@@ -167,16 +170,17 @@ void checkRAM();
 Task tWifiCheck(  5 * 1000, TASK_FOREVER, &runWifiCheck);
 Task tTimeSync( 60 * 1000, TASK_FOREVER, &runTimeSync);
 Task tDisplayTime( 1 * 1000, TASK_FOREVER, &runDisplayTime);
-Task tNameTag( 100, TASK_FOREVER, &nameTagLoop, NULL, false, &nameTagEnable);
+Task tNameTag( 100, TASK_FOREVER, &nameTagLoop, NULL, false, &nameTagEnable, &nameTagDisable);
 Task tNameEdit( 10000, TASK_FOREVER, NULL, NULL, false, &nameEditEnable, &nameEditDisable);
 Task tImagesDisplay( 3000, TASK_FOREVER, &imagesDisplay, NULL, false, &imagesEnable);
 Task tGetSessionsList(500, 1, &updateSessionsList);
 Task tSessionsDisplay(1000, TASK_FOREVER, &loopSessionsDisplay, NULL, false, &enableSessionsDisplay);
-Task tCheckLoop(1000, TASK_FOREVER, &checkLoop, NULL, false, &checkSetup);
+Task tCheckLoop(1000, TASK_FOREVER, &checkLoop, NULL, false, &checkEnable, &checkDisable);
 Task tUpdateButtons(1, TASK_FOREVER, &updateButtons);
 Task tFastLED(10, TASK_FOREVER, &updateFastLED);
+Task tLedRainbow(100, TASK_FOREVER, &ledRainbowCycle);
 Task tMenu(100, TASK_FOREVER, &menuLoop, NULL, false, &menuEnable);
-Task tCheckRAM(5000, TASK_FOREVER, &checkRAM);
+Task tCheckRAM(30000, TASK_FOREVER, &checkRAM);
 
 // Prototypes for setup
 void setupWifi();
@@ -196,6 +200,7 @@ void setup(void) {
   FastLED.addLeds<LED_TYPE,pinLedsData,pinLedsClock,COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
   FastLED.setBrightness(BRIGHTNESS);
   fill_solid(leds, NUM_LEDS, CRGB::Black);
+  //fill_solid(leds, NUM_LEDS, CRGB::Red);
   FastLED.show();
 
   // Initialise filesystem (onboard flash)
@@ -231,11 +236,13 @@ void setup(void) {
   runner.addTask(tFastLED);
   runner.addTask(tMenu);
   runner.addTask(tCheckRAM);
+  runner.addTask(tLedRainbow);
   // - start tasks
   tUpdateButtons.enable();
   tWifiCheck.enable();
   tTimeSync.enable();
   tFastLED.enable();
+  tLedRainbow.enable();
   tCheckRAM.enable();
   //tMenu.enable();
   //tNameEdit.enable();
@@ -285,12 +292,21 @@ void updateButtons() {
   }
 }
 
-void updateFastLED() {
+void ledRainbowCycle() {
   static int gHue = 0;
   gHue++;
-  // FastLED's built-in rainbow generator
-  fill_rainbow( leds, NUM_LEDS, gHue, 7);
+  fill_rainbow(leds, NUM_LEDS, gHue, 7);
+}
+
+void updateFastLED() {
   FastLED.show();
+}
+
+CRGB tftColourToFastLED(unsigned int colour) {
+  int red = ((colour >> 11) & 0b11111) * 8;
+  int green = ((colour >> 5) & 0b111111) * 4;
+  int blue = (colour & 0b11111) * 8;
+  return CRGB(red, green, blue);
 }
 
 void checkRAM() {

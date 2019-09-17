@@ -41,6 +41,21 @@ bool nameTagEnable() {
   tft.setTextColor(TAG_FG_COLS[tagColPos], TAG_BK_COLS[tagColPos]);
   tft.setTextWrap(false, false);
 
+  // Set FastLEDs
+//    unsigned int colour = col.red/8 << 11 | col.green/4 << 5 | col.blue/8;
+  tFastLED.disable();
+  tLedRainbow.disable();
+  unsigned int colour = TAG_BK_COLS[tagColPos];
+//  Serial.print(F("COLOUR => "));
+//  Serial.println(colour);
+//  int red = ((colour >> 11) & 0b11111) * 8;
+//  int green = ((colour >> 5) & 0b111111) * 4;
+//  int blue = (colour & 0b11111) * 8;
+//  Serial.printf("To: %d %d %d\n", red, green, blue);
+//  fill_solid(leds, NUM_LEDS, CRGB(red, green, blue));
+  fill_solid(leds, NUM_LEDS, tftColourToFastLED(colour));
+  FastLED.show();  
+
   if (tagName.length() > 0) {
     // Bsides title
     img.setFreeFont(FSS18);
@@ -85,6 +100,11 @@ bool nameTagEnable() {
   }
   
   return true;
+}
+
+void nameTagDisable() {
+  tFastLED.enable();
+  tLedRainbow.enable();
 }
 
 bool printOneWordPerLineVariableHeight(const String &str, int width, int y, bool simulate) {
