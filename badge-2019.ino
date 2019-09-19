@@ -71,6 +71,7 @@
 #include <FastLED.h>  // https://github.com/FastLED/FastLED
 #include <JPEGDecoder.h>  // https://github.com/Bodmer/JPEGDecoder
 #include <Bounce2.h>  //https://github.com/thomasfredericks/Bounce2
+#include <ArduinoJson.h>  //https://arduinojson.org/
 
 #include "TFT_eSPI/TFT_eSPI.h"   // Local copy of TFT_eSPI: https://github.com/Bodmer/TFT_eSPI
 #include "timelib.h"  // local copy since ESP32 seems to miss <time.h>
@@ -165,6 +166,9 @@ void ledRainbowCycle();
 bool menuEnable();
 void menuLoop();
 void checkRAM();
+bool badgeemEnable();
+void badgeemDisable();
+void badgeemLoop();
 // - tasks themselves 
 //     Task tTask(update time ms, update count, address of function);
 Task tWifiCheck(  5 * 1000, TASK_FOREVER, &runWifiCheck);
@@ -181,6 +185,7 @@ Task tFastLED(10, TASK_FOREVER, &updateFastLED);
 Task tLedRainbow(100, TASK_FOREVER, &ledRainbowCycle);
 Task tMenu(100, TASK_FOREVER, &menuLoop, NULL, false, &menuEnable);
 Task tCheckRAM(30000, TASK_FOREVER, &checkRAM);
+Task tBadgeem(1000, TASK_FOREVER, &badgeemLoop, NULL, false, &badgeemEnable, &badgeemDisable);
 
 // Prototypes for setup
 void setupWifi();
@@ -237,6 +242,7 @@ void setup(void) {
   runner.addTask(tMenu);
   runner.addTask(tCheckRAM);
   runner.addTask(tLedRainbow);
+  runner.addTask(tBadgeem);
   // - start tasks
   tUpdateButtons.enable();
   tWifiCheck.enable();
@@ -246,7 +252,8 @@ void setup(void) {
   tCheckRAM.enable();
   //tMenu.enable();
   //tNameEdit.enable();
-  tNameTag.enable();
+  //tNameTag.enable();
+  tBadgeem.enable();
   Serial.println(F("Initialised scheduler"));
 
   // Print badges unique ID (mac address)

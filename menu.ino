@@ -16,7 +16,7 @@ TMenuEntry menuEntries[menuCount] = {
   {"Name Tag", &tNameTag},
   {"Edit Name", &tNameEdit},
   {"Session Times", &tSessionsDisplay},
-  {"Badge Em All", 0},
+  {"Badge Em All", &tBadgeem},
   {"Game of Life", 0},
   {"Sponsors", &tImagesDisplay},
   {"Self-Check", &tCheckLoop}

@@ -73,17 +73,6 @@ void checkLoop() {
   FastLED.show();
 }
 
-//void drawIndicator(String text, bool status, int x, int y) {
-//  img.createSprite(50, 20);
-//  int backCol = status ? TFT_RED : TFT_GREEN;
-//  int foreCol = status ? TFT_WHITE : TFT_BLACK;
-//  img.fillSprite(backCol);
-//  img.setTextColor(foreCol, foreCol);
-//  img.drawString(text, 5, 5, 2);
-//  img.pushSprite(x, y);
-//  img.deleteSprite();
-//}
-
 void drawButton(const String & text, bool status, bool toggle, int x, int y) {
   img.createSprite(50, 20);
   int backCol = status ? (toggle ? TFT_BLUE : TFT_RED) : TFT_GREEN;

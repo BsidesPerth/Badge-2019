@@ -13,7 +13,11 @@ void drawJpeg(const char *filename, int xpos, int ypos);
 
 bool imagesEnable() {
   // Just do first image
-  //imagesDisplay();
+
+  for (int i=0; i<NUMBER_BUTTONS; i++) {
+    buttons[i].callback = NULL;
+  }  
+
   return true;
 }
 
