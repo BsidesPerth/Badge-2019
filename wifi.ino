@@ -142,6 +142,9 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
 
   // Get session updates from server
   tGetSessionsList.enable();
+
+  // Kick the registration in case its waiting
+  tBadgeemRegister.forceNextIteration();
 }
 
 void setupWifi()

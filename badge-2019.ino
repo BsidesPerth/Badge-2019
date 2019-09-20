@@ -169,6 +169,7 @@ void checkRAM();
 bool badgeemEnable();
 void badgeemDisable();
 void badgeemLoop();
+void badgeemRegisterLoop();
 // - tasks themselves 
 //     Task tTask(update time ms, update count, address of function);
 Task tWifiCheck(  5 * 1000, TASK_FOREVER, &runWifiCheck);
@@ -186,6 +187,7 @@ Task tLedRainbow(100, TASK_FOREVER, &ledRainbowCycle);
 Task tMenu(100, TASK_FOREVER, &menuLoop, NULL, false, &menuEnable);
 Task tCheckRAM(30000, TASK_FOREVER, &checkRAM);
 Task tBadgeem(1000, TASK_FOREVER, &badgeemLoop, NULL, false, &badgeemEnable, &badgeemDisable);
+Task tBadgeemRegister(60 * 1000, TASK_FOREVER, &badgeemRegisterLoop);
 
 // Prototypes for setup
 void setupWifi();
@@ -224,6 +226,7 @@ void setup(void) {
 //  Serial.flush();
   readSessionListFromFlash();
   readTagFromFlash();
+  badgeemRegisterLoop();
 
   // Start scheduler
   runner.init();
@@ -243,6 +246,7 @@ void setup(void) {
   runner.addTask(tCheckRAM);
   runner.addTask(tLedRainbow);
   runner.addTask(tBadgeem);
+  runner.addTask(tBadgeemRegister);
   // - start tasks
   tUpdateButtons.enable();
   tWifiCheck.enable();
@@ -254,6 +258,7 @@ void setup(void) {
   //tNameEdit.enable();
   //tNameTag.enable();
   tBadgeem.enable();
+  tBadgeemRegister.enable();
   Serial.println(F("Initialised scheduler"));
 
   // Print badges unique ID (mac address)
@@ -319,19 +324,4 @@ CRGB tftColourToFastLED(unsigned int colour) {
 void checkRAM() {
   Serial.print(F("Check RAM: "));
   Serial.println(ESP.getFreeHeap());
-}
-
-void checkFontsExist() {
-  // TFT_eSPI Font_Demo_1
-  // ESP32 will crash if any of the fonts are missing
-  bool font_missing = false;
-  if (SPIFFS.exists("/NotoSansBold15.vlw")    == false) font_missing = true;
-  if (SPIFFS.exists("/NotoSansBold36.vlw")    == false) font_missing = true;
-
-  if (font_missing)
-  {
-    Serial.println(F("\r\nFont missing in SPIFFS, did you upload it?"));
-    while(1) yield();
-  }
-  else Serial.println(F("\r\nFonts found OK."));
 }
