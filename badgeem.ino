@@ -101,6 +101,9 @@ void badgeemLoop() {
       int score = badgeemDownloadScore();
       tft.setTextColor(TFT_WHITE, TFT_BLACK);
       tft.drawString(String("Score = ") + String(score), 10, 30, 4);
+    } else {
+      tft.setTextColor(TFT_RED, TFT_BLACK);
+      tft.drawString("Not Registered", 10, 30, 4);
     }
   }
 }
