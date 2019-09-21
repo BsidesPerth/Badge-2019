@@ -159,6 +159,8 @@ int badgeemDownloadScore() {
 }
 
 int badgeemParseScore(const String & str) {
+  Serial.print("[badgeemParseScore] parse score");
+  Serial.println(str);
   DeserializationError err = deserializeJson(json, str);
   int score = -1;
 
@@ -167,7 +169,7 @@ int badgeemParseScore(const String & str) {
     if (status == "OK") {
       Serial.println("Parse ok!");
       Serial.flush();
-      score = json["hash"];
+      score = json["score"];
       Serial.print("Score=");
       Serial.println(score);
     } else {

@@ -256,8 +256,8 @@ void setup(void) {
   tCheckRAM.enable();
   //tMenu.enable();
   //tNameEdit.enable();
-  //tNameTag.enable();
-  tBadgeem.enable();
+  tNameTag.enable();
+  //tBadgeem.enable();
   tBadgeemRegister.enable();
   Serial.println(F("Initialised scheduler"));
 
