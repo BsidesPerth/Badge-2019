@@ -21,6 +21,7 @@ const int capacity = JSON_OBJECT_SIZE(10);  // 4 fields plus a spare
 StaticJsonDocument<capacity> json;
 
 bool badgeemRegistered = false;
+bool badgeemRedraw = false;
 String badgeemToken;
 String badgeemHash;
 String badgeemImageUrl;
@@ -72,18 +73,19 @@ bool badgeemEnable() {
   }
 
   tLedRainbow.disable();
+  badgeemRedraw = true;
 
   return true;
 }
 
 void badgeemDisable() {
   tLedRainbow.enable();
+  tMenu.enable();
 }
 
 void badgeemButtonHandler(EBUTTONS button, bool pressed) {
   if (pressed && (button == BUTTON_MID)) {
     tBadgeem.disable();
-    tMenu.enable();
   } else if (pressed && (button == BUTTON_BOTTOM)) {
     // Ok
     //badgeemRegister();
@@ -92,6 +94,8 @@ void badgeemButtonHandler(EBUTTONS button, bool pressed) {
   // Event driven check update
   badgeemLoop();
 }
+
+int lastScore = -2;
 
 void badgeemLoop() {
   Serial.println(F("Badgeem Loop"));
@@ -102,8 +106,11 @@ void badgeemLoop() {
       tft.setTextColor(TFT_WHITE, TFT_BLACK);
       tft.drawString(String("Score = ") + String(score), 10, 30, 4);
     } else {
-      tft.setTextColor(TFT_RED, TFT_BLACK);
-      tft.drawString("Not Registered", 10, 30, 4);
+      if (badgeemRedraw) {
+        tft.setTextColor(TFT_RED, TFT_BLACK);
+        tft.drawString("Not Registered", 10, 30, 4);
+        badgeemRedraw = false;
+      }
     }
   }
 }

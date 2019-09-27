@@ -476,8 +476,7 @@ void parseTagFromString(String & tagStr) {
   int start = 0;
   int end = 0;
   String item;
-  sessionCount = 0;
-
+  
   if (!parseNextItem(start, end, tagStr, lineSep, item)) return;
   Serial.print(F("{TAG}  Name = "));
   Serial.println(item);

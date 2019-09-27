@@ -39,7 +39,7 @@ String timeToStr(time_t& time);
 bool parseNextItem(int& start, int& end, const String& str, const char* search, String& item);
 
 void readSessionListFromFlash() {
-  Serial.println(F("{SESSIONS} parseSessionListFromString"));
+  Serial.println(F("{SESSIONS} readSessionListFromFlash"));
   String diskFile = readFile(sessionsFilename);
   if (diskFile.length() > 0) {
     parseSessionListFromString(diskFile);
@@ -54,6 +54,7 @@ void parseSessionListFromString(String & sessionListStr) {
   int end = 0;
   String item;
   sessionCount = 0;
+  sessionPairCount = 0;
 
   bool firstOfPair = true;
   
@@ -107,8 +108,9 @@ void parseSessionListFromString(String & sessionListStr) {
     if (!parseNextItem(start, end, sessionListStr, lineSep, item)) break;
     Serial.printf("{SESSIONS} speaker = %s\n", item.c_str());
     sessionList[i].speaker = item;
-
   }  
+
+  Serial.printf("{SESSIONS} sessionCount = %d, sessionPairCount = %d\n", sessionCount, sessionPairCount);
 }
 
 // Look for "search" in "str" and output in "item".

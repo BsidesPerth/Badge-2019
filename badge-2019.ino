@@ -81,6 +81,9 @@
 TFT_eSPI tft = TFT_eSPI();  // Create screen object 240x240
 TFT_eSprite img = TFT_eSprite(&tft);  // Sprite for in memory rendering
 
+// TFT LCD Backlight
+const int pinLcdBacklight = 23;
+
 // Buttons
 #define DEBOUNCE_INTERVAL 25
 #define NUMBER_BUTTONS 7
@@ -103,11 +106,11 @@ struct buttons_t {
 };
 
 buttons_t buttons[NUMBER_BUTTONS] = {
-  {0,  INPUT, HIGH, Bounce(), nullptr},  // SW1 = BUTTON_UP
+  {0,  INPUT, HIGH, Bounce(), nullptr},  // SW2 = BUTTON_UP
   {34, INPUT, HIGH, Bounce(), nullptr},  // SW3 = BUTTON_RIGHT
   {36, INPUT, HIGH, Bounce(), nullptr},  // SW4 = BUTTON_DOWN
   {35, INPUT, HIGH, Bounce(), nullptr},  // SW5 = BUTTON_LEFT
-  {27, INPUT_PULLUP, HIGH, Bounce(), nullptr},  // SW6 = BUTTON_TOP
+  {18, INPUT_PULLUP, HIGH, Bounce(), nullptr},  // SW6 = BUTTON_TOP
   {39, INPUT, HIGH, Bounce(), nullptr},  // SW7 = BUTTON_MID
   {33, INPUT, HIGH, Bounce(), nullptr}   // SW8 = BUTTON_BOTTOM
 };
@@ -120,7 +123,8 @@ const int pinChargeInd = 32;
 const int pinOutR = 22;
 const int pinOutG = 21;
 const int pinOutB = 19;
-const int pinOutH = 18;
+const int pinOutS = 25;
+const int pinOutH = 12;
 const int pinOutV = 5;
 
 // IR
@@ -135,7 +139,8 @@ const int pinLedsClock = 2;
 #define NUM_LEDS    8
 #define LED_TYPE    APA102
 #define COLOR_ORDER BGR
-#define BRIGHTNESS  10
+//#define BRIGHTNESS  10
+#define BRIGHTNESS  32
 CRGB leds[NUM_LEDS];
 bool ledRainbow = true;
 
@@ -170,6 +175,9 @@ bool badgeemEnable();
 void badgeemDisable();
 void badgeemLoop();
 void badgeemRegisterLoop();
+void gameoflifeLoop();
+bool gameoflifeEnable();
+void gameoflifeDisable();
 // - tasks themselves 
 //     Task tTask(update time ms, update count, address of function);
 Task tWifiCheck(  5 * 1000, TASK_FOREVER, &runWifiCheck);
@@ -188,6 +196,7 @@ Task tMenu(100, TASK_FOREVER, &menuLoop, NULL, false, &menuEnable);
 Task tCheckRAM(30000, TASK_FOREVER, &checkRAM);
 Task tBadgeem(1000, TASK_FOREVER, &badgeemLoop, NULL, false, &badgeemEnable, &badgeemDisable);
 Task tBadgeemRegister(60 * 1000, TASK_FOREVER, &badgeemRegisterLoop);
+Task tGameOfLife(1, TASK_FOREVER, &gameoflifeLoop, NULL, false, &gameoflifeEnable, &gameoflifeDisable);
 
 // Prototypes for setup
 void setupWifi();
@@ -199,6 +208,10 @@ void setup(void) {
   tft.init();
   tft.fillScreen(TFT_BLACK);
   
+  // Turn on backlight
+  pinMode(pinLcdBacklight, OUTPUT);
+  digitalWrite(pinLcdBacklight, HIGH);
+
   Serial.begin(115200);
   //Serial.begin(2000000);
   Serial.println(F("Bsides Badge 2019 starting"));
@@ -247,18 +260,18 @@ void setup(void) {
   runner.addTask(tLedRainbow);
   runner.addTask(tBadgeem);
   runner.addTask(tBadgeemRegister);
-  // - start tasks
+  runner.addTask(tGameOfLife);
+  // - start background tasks
   tUpdateButtons.enable();
   tWifiCheck.enable();
   tTimeSync.enable();
   tFastLED.enable();
   tLedRainbow.enable();
   tCheckRAM.enable();
+  //tBadgeemRegister.enable();
+  // - start display task
   //tMenu.enable();
-  //tNameEdit.enable();
   tNameTag.enable();
-  //tBadgeem.enable();
-  tBadgeemRegister.enable();
   Serial.println(F("Initialised scheduler"));
 
   // Print badges unique ID (mac address)

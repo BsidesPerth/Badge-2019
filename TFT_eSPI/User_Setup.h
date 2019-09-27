@@ -37,8 +37,8 @@
 #define TFT_MOSI 4
 #define TFT_SCLK 16
 #define TFT_CS   17  // Chip select control pin
-#define TFT_DC    26  // Data Command control pin
-#define TFT_RST   25  // Reset pin (could connect to RST pin)
+#define TFT_DC    27  // Data Command control pin
+#define TFT_RST   26  // Reset pin (could connect to RST pin)
 
 // ##################################################################################
 //
