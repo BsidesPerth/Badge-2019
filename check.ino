@@ -1,10 +1,20 @@
 // Check the components on the board
-// TODO: Add some way to exit
+//
+// After pressing a button, check will exit after 5 seconds of inactivity
+//
 // TODO: Missing other devices?
+// TODO: Do IR pulse and read IR sensor
 
 bool checkButtonsToggle[NUMBER_BUTTONS] = {0};
+int checkCountdown = -1;
+const int checkCountdownResetValue = 5;
+bool checkStopping = false;
 
 bool checkEnable() {
+  tLedRainbow.disable();
+  checkStopping = false;
+  checkCountdown = -1;
+
   Serial.println(F("Test Setup"));
   tft.fillScreen(TFT_BLACK);
   tft.setTextSize(1);
@@ -16,12 +26,11 @@ bool checkEnable() {
     buttons[i].callback = checkButtonHandler;
   }  
 
-  tLedRainbow.disable();
-
   return true;
 }
 
 void checkDisable() {
+  checkStopping = true;
   tLedRainbow.enable();
 }
 
@@ -33,15 +42,35 @@ void checkButtonHandler(EBUTTONS button, bool pressed) {
   
   // Event driven check update
   checkLoop();
+
+  // Reset counter
+  checkCountdown = checkCountdownResetValue;
 }
 
 void checkLoop() {
+  if (checkStopping) {
+    Serial.println(F("Check still stopping"));
+    return;
+  }
+  
   Serial.print(F("Self-Check: "));
+
+  if (checkCountdown == 0) {
+    // exit
+    Serial.println(F("Check countdown expire. Return to menu"));
+    tCheckLoop.disable();
+    tMenu.enable();
+    return;
+  }
+
+  if (checkCountdown > 0) {
+    checkCountdown--;
+  }
   
   const int vertSpace = 30;
   for (int i=0; i<7; i++) {
-    // No switch 2
-    int number = (i>0) ? i+2 : i+1;
+    // No switch 1
+    int number = i+2;
     int pinStatus = buttons[i].debouncer.read();
     bool toggleStatus = checkButtonsToggle[i];
     
