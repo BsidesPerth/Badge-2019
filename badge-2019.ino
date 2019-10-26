@@ -139,8 +139,8 @@ const int pinLedsClock = 2;
 #define NUM_LEDS    8
 #define LED_TYPE    APA102
 #define COLOR_ORDER BGR
-//#define BRIGHTNESS  10
-#define BRIGHTNESS  32
+#define BRIGHTNESS  10
+//#define BRIGHTNESS  32
 CRGB leds[NUM_LEDS];
 bool ledRainbow = true;
 
@@ -201,6 +201,7 @@ Task tGameOfLife(1, TASK_FOREVER, &gameoflifeLoop, NULL, false, &gameoflifeEnabl
 // Prototypes for setup
 void setupWifi();
 void readSessionListFromFlash();
+bool checkFirstStart();
 
 void setup(void) {
   // Start and clear screen 
@@ -226,7 +227,12 @@ void setup(void) {
   // Initialise filesystem (onboard flash)
   if (!SPIFFS.begin()) {
     Serial.println(F("SPIFFS initialisation failed!"));
-    while (1) yield(); // Stay here twiddling thumbs waiting
+    leds[0] = CRGB::Yellow;
+    leds[1] = CRGB::Yellow;
+    FastLED.show();
+    while (1) {
+      yield(); // stay here - infinite loop
+    }
   }
 
   // Initialse various modules
@@ -270,8 +276,12 @@ void setup(void) {
   tCheckRAM.enable();
   //tBadgeemRegister.enable();
   // - start display task
-  //tMenu.enable();
-  tNameTag.enable();
+  if (checkFirstStart()) {
+    tCheckLoop.enable();
+  } else {
+    //tMenu.enable();
+    tNameTag.enable();
+  }
   Serial.println(F("Initialised scheduler"));
 
   // Print badges unique ID (mac address)

@@ -9,6 +9,24 @@ bool checkButtonsToggle[NUMBER_BUTTONS] = {0};
 int checkCountdown = -1;
 const int checkCountdownResetValue = 5;
 bool checkStopping = false;
+const char * checkFirstStartFilename = "/first_start.txt";
+
+bool checkFirstStart() {
+  Serial.println(F("{CHECK} checkFirstStart"));
+  String diskFile = readFile(checkFirstStartFilename);
+  if (diskFile.length() == 0) {
+    // either file is empty or missing - this is first start
+
+    // create file
+    Serial.println(F("{CHECK} First start. Write first start file for next time."));
+    writeFile(checkFirstStartFilename, "1");
+
+    return true;
+  } else {
+    // not first start
+    return false;
+  }
+}
 
 bool checkEnable() {
   tLedRainbow.disable();
