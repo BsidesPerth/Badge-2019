@@ -21,7 +21,7 @@ BSidesPerth Badge 2019
    1. Extract zip to your arduino sketch folder (often in `documents\Arduino`)
    1. Should look like: `arduino\badge-2019\badge-2019.ino` (folder name is important)
  1. Install libraries by copying them from `badge-2019\libraries\` into the `libraries\` folder in your arduino sketch directory
- 1. Open code in Arduino IDE (double click on `badge-2019.ino` or use file->open)
+ 1. Restart Arduino IDE and then open `badge-2019` code in Arduino IDE (double click on `badge-2019.ino` or use file->open)
  1. Select board `ESP32 Dev Module`
  1. Connect badge to computer with micro USB cable
  1. Select COM port for the badge (there should only be one - ignore any bluetooth COM ports)
