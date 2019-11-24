@@ -40,6 +40,13 @@ BSidesPerth Badge 2019
    1. Pay attention to when you see in orange `Connecting........________`
    1. Press and hold SW2 (up arrow) on badge, until the upload process move onto next line.
 
+## Testing Badge
+1. A freshly programmed badge will show all red LEDs - in the self test
+1. press each switch SW2 to SW7 to see the LEDs for the eyes and crest toggle from red to green (when pressed) to blue (when released).
+1. SW8 toggles IR LED (can see IR led in dark room with phone camera) - not essential testing
+1. After approx 5s idle, the self test will exit and badge will return to menu
+   1. In menu the LEDs will do a colour rainbow.
+
 ## Bulk Programming Board
 Suggested workflow for programming many boards, one after another.
 1. Put code on one board as per above steps in "Programming Board"
@@ -56,7 +63,7 @@ Suggested workflow for programming many boards, one after another.
    1. Ensure yellow eyes appear - if not power cycle
    1. When upload complete, go back to Arduino IDE and do `ESP32 Sketch Data Upload`
    1. Board should now start with all red LEDs
-   1. press each switch SW2 to SW7 and see that each one changes LED to red. SW8 toggles IR LED.
+   1. press each switch SW2 to SW7 and see that each one changes LED to blue. SW8 toggles IR LED.
    1. Done!
 
 
