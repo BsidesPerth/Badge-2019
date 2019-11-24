@@ -4,8 +4,6 @@
 
 #pragma once
 
-#include <ArduinoJson/Namespace.hpp>
-
 namespace ARDUINOJSON_NAMESPACE {
 
 // Some libraries #define isnan() and isinf() so we need to check before

@@ -4,8 +4,6 @@
 
 #pragma once
 
-#include <ArduinoJson/Namespace.hpp>
-
 namespace ARDUINOJSON_NAMESPACE {
 
 template <typename T, T v>

@@ -31,10 +31,6 @@ class ObjectRefBase {
     return _data == 0;
   }
 
-  FORCE_INLINE operator bool() const {
-    return _data != 0;
-  }
-
   FORCE_INLINE size_t memoryUsage() const {
     return _data ? _data->memoryUsage() : 0;
   }

@@ -277,7 +277,6 @@ TEST_CASE("deserialize JSON object") {
       DeserializationError err = deserializeJson(doc, "{a:{b:{c:1}},a:2}");
 
       REQUIRE(err == DeserializationError::Ok);
-      REQUIRE(doc["a"] == 2);
     }
   }
 

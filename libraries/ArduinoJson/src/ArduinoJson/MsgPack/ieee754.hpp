@@ -4,8 +4,6 @@
 
 #pragma once
 
-#include <ArduinoJson/Namespace.hpp>
-
 namespace ARDUINOJSON_NAMESPACE {
 
 inline void doubleToFloat(const uint8_t d[8], uint8_t f[4]) {

@@ -4,8 +4,6 @@
 
 #pragma once
 
-#include <ArduinoJson/Namespace.hpp>
-
 #include <string.h>  // strcmp
 
 namespace ARDUINOJSON_NAMESPACE {

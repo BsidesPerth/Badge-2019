@@ -130,21 +130,15 @@ class JsonDeserializer {
 
     // Read each key value pair
     for (;;) {
+      // Allocate slot in object
+      VariantSlot *slot = object.addSlot(_pool);
+      if (!slot) return DeserializationError::NoMemory;
+
       // Parse key
       const char *key;
       err = parseKey(key);
       if (err) return err;
-
-      VariantData *variant = object.get(adaptString(key));
-      if (!variant) {
-        // Allocate slot in object
-        VariantSlot *slot = object.addSlot(_pool);
-        if (!slot) return DeserializationError::NoMemory;
-
-        slot->setOwnedKey(make_not_null(key));
-
-        variant = slot->data();
-      }
+      slot->setOwnedKey(make_not_null(key));
 
       // Skip spaces
       err = skipSpacesAndComments();
@@ -153,7 +147,7 @@ class JsonDeserializer {
 
       // Parse value
       _nestingLimit--;
-      err = parseVariant(*variant);
+      err = parseVariant(*slot->data());
       _nestingLimit++;
       if (err) return err;
 

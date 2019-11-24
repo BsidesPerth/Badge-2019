@@ -49,15 +49,15 @@ TEST_CASE("StaticStringWriter") {
   }
 }
 
-TEST_CASE("Writer<std::string>") {
+TEST_CASE("DynamicStringWriter<std::string>") {
   std::string output;
-  Writer<std::string> sb(output);
+  DynamicStringWriter<std::string> sb(output);
   common_tests(sb, output);
 }
 
-TEST_CASE("Writer<custom_string>") {
+TEST_CASE("DynamicStringWriter<custom_string>") {
   custom_string output;
-  Writer<custom_string> sb(output);
+  DynamicStringWriter<custom_string> sb(output);
 
   REQUIRE(4 == print(sb, "ABCD"));
   REQUIRE("ABCD" == output);

@@ -28,12 +28,28 @@ Scheduling overhead: between `15` and `18` microseconds per scheduling pass (Ard
 * ESP8266 (Node MCU v2.0)
 * ESP32
 * Teensy (tested on Teensy 3.5)
-* STM32F1 (tested on Mini USB STM32F103RCBT6 ARM Cortex-M3 leaflabs Leaf maple mini module F)
+* STN32F1 (tested on Mini USB STM32F103RCBT6 ARM Cortex-M3 leaflabs Leaf maple mini module F)
 ---
 ![TaskScheduler process diagram](https://github.com/arkhipenko/TaskScheduler/raw/master/extras/TaskScheduler_html.png)
 ---
-### Changelog is located [here.](https://github.com/arkhipenko/TaskScheduler/wiki/Changelog)
-
+### [Changelog:](https://github.com/arkhipenko/TaskScheduler/wiki/Changelog)
+Version|Version 1|Version 2
+---|---|---
+|| |[2.6.1](https://github.com/arkhipenko/TaskScheduler/wiki/Changelog#v261) (*current version*)
+||[1.9.2](https://github.com/arkhipenko/TaskScheduler/wiki/Changelog#v192)|[2.6.0](https://github.com/arkhipenko/TaskScheduler/wiki/Changelog#v260)
+||[1.9.0](https://github.com/arkhipenko/TaskScheduler/wiki/Changelog#v190)|[2.5.2](https://github.com/arkhipenko/TaskScheduler/wiki/Changelog#v252)
+||[1.8.5](https://github.com/arkhipenko/TaskScheduler/wiki/Changelog#v185)|[2.5.1](https://github.com/arkhipenko/TaskScheduler/wiki/Changelog#v251)
+||[1.8.4](https://github.com/arkhipenko/TaskScheduler/wiki/Changelog#v184)|[2.5.0](https://github.com/arkhipenko/TaskScheduler/wiki/Changelog#v250)
+||[1.8.3](https://github.com/arkhipenko/TaskScheduler/wiki/Changelog#v183)|[2.4.0](https://github.com/arkhipenko/TaskScheduler/wiki/Changelog#v240)
+||[1.8.2](https://github.com/arkhipenko/TaskScheduler/wiki/Changelog#v182)|[2.3.0](https://github.com/arkhipenko/TaskScheduler/wiki/Changelog#v230)
+||[1.8.1](https://github.com/arkhipenko/TaskScheduler/wiki/Changelog#v181)|[2.2.1](https://github.com/arkhipenko/TaskScheduler/wiki/Changelog#v221)
+||[1.8.0](https://github.com/arkhipenko/TaskScheduler/wiki/Changelog#v180)|[2.2.0](https://github.com/arkhipenko/TaskScheduler/wiki/Changelog#v220)
+||[1.7.0](https://github.com/arkhipenko/TaskScheduler/wiki/Changelog#v170)|[2.1.0](https://github.com/arkhipenko/TaskScheduler/wiki/Changelog#v210)
+||[1.6.0](https://github.com/arkhipenko/TaskScheduler/wiki/Changelog#v160)|[2.0.1](https://github.com/arkhipenko/TaskScheduler/wiki/Changelog#v201)
+||[1.5.1](https://github.com/arkhipenko/TaskScheduler/wiki/Changelog#v151)|[2.0.0](https://github.com/arkhipenko/TaskScheduler/wiki/Changelog#v200)
+||[1.5.0](https://github.com/arkhipenko/TaskScheduler/wiki/Changelog#v150)|
+||[1.4.1](https://github.com/arkhipenko/TaskScheduler/wiki/Changelog#v141)|
+||[1.0.0](https://github.com/arkhipenko/TaskScheduler/wiki/Changelog#v100)|
 
 #### For detailed functionality overview please refer to TaskScheduler documentation in the 'extras' folder or in the [Wiki page](https://github.com/arkhipenko/TaskScheduler/wiki).
 
@@ -72,6 +88,3 @@ Scheduling overhead: between `15` and `18` microseconds per scheduling pass (Ard
 * Interactive Halloween Pumpkin
     (by arkhipenko: http://www.instructables.com/id/Interactive-Halloween-Pumpkin/)
 
-* Interactive Predator Costume with Real-Time Head Tracking Plasma Cannon
-    (by arkhipenko: https://www.instructables.com/id/Interactive-Predator-Costume-With-Head-Tracking-Pl/)
-    

@@ -5,7 +5,7 @@
 add_executable(MiscTests
 	conflicts.cpp
 	FloatParts.cpp
-	Readers.cpp
+	StreamReader.cpp
 	StringAdapters.cpp
 	StringWriter.cpp
 	TypeTraits.cpp
