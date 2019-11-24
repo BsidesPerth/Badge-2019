@@ -25,5 +25,6 @@ BSidesPerth Badge 2019
  1. Select board `ESP32 Dev Module`
  1. Connect badge to computer with micro USB cable
  1. Select COM port for the badge (there should only be one - ignore any bluetooth COM ports)
- 1. Select "download" in Arduino IDE
+    1. `Tools` -> `Port`
+ 1. Select "Upload" in Arduino IDE to compile and send code to badge
  
