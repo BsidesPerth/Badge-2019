@@ -20,11 +20,13 @@ BSidesPerth Badge 2019
    1. Click `download zip`
    1. Extract zip to your arduino sketch folder (often in `documents\Arduino`)
    1. Should look like: `arduino\badge-2019\badge-2019.ino` (folder name is important)
- 1. Install libraries by copying them from `badge-2019\libraries\` into the `libraries\` folder in your arduino sketch directory
- 1. Restart Arduino IDE and then open `badge-2019` code in Arduino IDE (double click on `badge-2019.ino` or use file->open)
- 1. Select board `ESP32 Dev Module`
- 1. Connect badge to computer with micro USB cable
- 1. Select COM port for the badge (there should only be one - ignore any bluetooth COM ports)
-    1. `Tools` -> `Port`
- 1. Select "Upload" in Arduino IDE to compile and send code to badge
- 
+1. Install libraries by copying them from `badge-2019\libraries\` into the `libraries\` folder in your arduino sketch directory
+1. Restart Arduino IDE and then open `badge-2019` code in Arduino IDE (double click on `badge-2019.ino` or use file->open)
+1. Select board `ESP32 Dev Module`
+1. Connect badge to computer with micro USB cable
+1. Select COM port for the badge (there should only be one - ignore any bluetooth COM ports)
+   1. `Tools` -> `Port`
+1. Select "Upload" in Arduino IDE to compile and send code to badge
+1. You should see yellow lights on "eyes" of badge when it finishes downloading
+   1. This means code has been loaded onto board but but not the SPIFFS data
+1. Download the SPIFFS data (JPEG images) by clicking `Tools` -> `ESP32 Sketch Data Upload`
