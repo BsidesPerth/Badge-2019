@@ -3,7 +3,9 @@
 
 #include "Bounce2.h"
 
-
+static const uint8_t DEBOUNCED_STATE = 0b00000001;
+static const uint8_t UNSTABLE_STATE  = 0b00000010;
+static const uint8_t CHANGED_STATE   = 0b00000100;
 
 
 Bounce::Bounce()
@@ -102,15 +104,15 @@ bool Bounce::update()
     
 #endif
 
-		return  changed(); 
+		return  getStateFlag(CHANGED_STATE); 
 
 }
-
+/*
 // WIP HELD
-unsigned long Bounce::previousDuration() {
+unsigned long Bounce::held() {
 	return durationOfPreviousState;
 }
-
+*/
 unsigned long Bounce::duration() {
 	return (millis() - stateChangeLastTime);
 }
@@ -118,7 +120,7 @@ unsigned long Bounce::duration() {
 inline void Bounce::changeState() {
 	toggleStateFlag(DEBOUNCED_STATE);
 	setStateFlag(CHANGED_STATE) ;
-	durationOfPreviousState = millis() - stateChangeLastTime;
+	// WIP HELD : durationOfPreviousState = millis() - stateChangeLastTime;
 	stateChangeLastTime = millis();
 }
 
