@@ -34,6 +34,7 @@ BSidesPerth Badge 2019
    1. Pay attention to when you see in orange `Connecting........________`
    1. Press and hold SW2 (up arrow) on badge, until the upload process move onto next line.
 1. You should see yellow lights on "eyes" of badge when it finishes downloading
+   1. If you don't get yellow eyes, try unplugging and replugging board (power cycle)
    1. This means code has been loaded onto board but but not the SPIFFS data
 1. Download the SPIFFS data (JPEG images) by clicking `Tools` -> `ESP32 Sketch Data Upload`
    1. Pay attention to when you see in orange `Connecting........________`
@@ -42,4 +43,21 @@ BSidesPerth Badge 2019
 ## Bulk Programming Board
 Suggested workflow for programming many boards, one after another.
 1. Put code on one board as per above steps in "Programming Board"
-1. 
+1. Save the commandline to upload from Arduino IDE log window which should look like this:
+   1. `C:\Users\user\AppData\Local\Arduino15\packages\esp32\tools\esptool_py\2.6.1/esptool.exe --chip esp32 --port COM117 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect 0xe000 C:\Users\user\AppData\Local\Arduino15\packages\esp32\hardware\esp32\1.0.2/tools/partitions/boot_app0.bin 0x1000 C:\Users\user\AppData\Local\Arduino15\packages\esp32\hardware\esp32\1.0.2/tools/sdk/bin/bootloader_qio_80m.bin 0x10000 C:\Users\user\AppData\Local\Temp\arduino_build_12566/badge-2019.ino.bin 0x8000 C:\Users\user\AppData\Local\Temp\arduino_build_12566/badge-2019.ino.partitions.bin`
+   1. Notice the arduino IDE has built to a temporary location. When Arduino IDE is closed this will likely be lost.
+   1. You could take a copy and change the paths to work.
+1. Open a windows command prompt and paste in the commandline (or make a `.bat` file with `%1` for COM number e.g. `--port COM%1`)
+1. For each board
+   1. Plug in board
+   1. In Arduino IDE, choose port for this board (will vary each time) - Remember port number
+   1. Go back to command window and edit com port before running upload
+   1. Hold SW2 until connects
+   1. Ensure yellow eyes appear - if not power cycle
+   1. When upload complete, go back to Arduino IDE and do `ESP32 Sketch Data Upload`
+   1. Board should now start with all red LEDs
+   1. press each switch SW2 to SW7 and see that each one changes LED to red. SW8 toggles IR LED.
+   1. Done!
+
+
+
