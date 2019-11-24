@@ -46,7 +46,7 @@
 
 // Wifi password input via "secrets.h" (to avoid committing to git).
 // Not specifying password will keep the same one set as before upload.
-#include "secrets.h"
+//#include "secrets.h"
 /* To change wifi password create a new tab "secrets.h" and copy these two lines into it:
 #define SECRETS_SSID "ssid"
 #define SECRETS_PASSWORD "password"
