@@ -12,4 +12,16 @@ BSidesPerth Badge 2019
    1. Direct link: https://github.com/me-no-dev/arduino-esp32fs-plugin/releases/
    1. Goes in: `<home_dir>/Arduino-<version>/tools/ESP32FS/tool/esp32fs.jar`
    1. Or maybe: `<documents>/Arduino/tools/ESP32FS/tool/esp32fs.jar`
-   1. Will add menu item: `ESP32 Sketch Data Upload`
+   1. Restart IDE and will add menu item: `ESP32 Sketch Data Upload`
+1. Download the code
+   1. Click `clone or download` green button on this github page
+   1. Click `download zip`
+   1. Extract zip to your arduino folder (often in `documents\Arduino`)
+   1. Should look like: `arduino\badge-2019\badge-2019.ino` (folder name is important)
+ 1. Open code in Arduino IDE (double click on `badge-2019.ino` or use file->open)
+ 1. Select board `ESP32 Dev Module`
+ 1. Install libraries (TODO - explain)
+ 1. Connect badge to computer with micro USB cable
+ 1. Select COM port for the badge (there should only be one - ignore any bluetooth COM ports)
+ 1. Select "download" in Arduino IDE
+ 
